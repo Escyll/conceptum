@@ -10,8 +10,12 @@
 class Material
 {
 public:
+    Material() = default;
+    Material(Material&) = delete;
+    Material(Material&&);
     Material(ShaderProgram *program, const std::string &texturePath);
     ~Material();
+    Material& operator=(Material&& material);
     const ShaderProgram *getShader() const;
     const unsigned char *getTexture() const;
 
