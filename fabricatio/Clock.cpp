@@ -14,8 +14,8 @@ float Clock::deltaSeconds()
     return delta.count();
 }
 
-//float Clock::elapsedSeconds()
-//{
-//    std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - m_start;
-//    return elapsed.count();
-//}
+float Clock::elapsedSeconds()
+{
+    std::chrono::duration<float> elapsed = std::chrono::steady_clock::now() - m_start;
+    return elapsed.count();
+}

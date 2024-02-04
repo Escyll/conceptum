@@ -16,7 +16,7 @@ AppWindow::AppWindow(int width, int height)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(width, height, "Conceptum", NULL, NULL);
+    m_window = glfwCreateWindow(width, height, "Fabricatio", NULL, NULL);
     glfwSetWindowPos(m_window, (1920 - width) / 2, 32);
     if (m_window == NULL)
     {
@@ -24,6 +24,7 @@ AppWindow::AppWindow(int width, int height)
         throw std::runtime_error("Failed to create GLFW window");
     }
     glfwMakeContextCurrent(m_window);
+    glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {

@@ -10,8 +10,8 @@ class Clock
 public:
     Clock();
 
-    //float elapsedSeconds();
     float deltaSeconds();
+    float elapsedSeconds();
 
 private:
     std::chrono::steady_clock::time_point m_start;

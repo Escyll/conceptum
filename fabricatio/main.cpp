@@ -80,19 +80,28 @@ int main()
         std::vector<System*> systems { &spinSystem, &renderSystem };
 
         Clock clock;
+        const float fpsLimit = 1.0f/240.0f;
+        float lastUpdateTime = 0;
+        float lastFrameTime = 0;
         while (!appWindow.shouldClose())
         {
+            float elapsedSeconds = clock.elapsedSeconds();
+            float timeSinceLastUpdate = elapsedSeconds - lastUpdateTime;
+            appWindow.pollEvents();
             appWindow.processInput();
 
-            float timeDelta = clock.deltaSeconds();
-            
-            for (auto system : systems)
+            if (elapsedSeconds - lastFrameTime >= fpsLimit)
             {
-                system->Progress(timeDelta);
-            }
+                float timeDelta = clock.deltaSeconds();
+                for (auto system : systems)
+                {
+                    system->Progress(timeDelta);
+                }
+                appWindow.swapBuffer();
 
-            appWindow.swapBuffer();
-            appWindow.pollEvents();
+                lastFrameTime = elapsedSeconds;
+            }
+            lastUpdateTime = elapsedSeconds;
         }
     }
     catch (std::exception &e)
