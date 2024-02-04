@@ -16,7 +16,7 @@ AppWindow::AppWindow(int width, int height)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(width, height, "Underwater shader", NULL, NULL);
+    m_window = glfwCreateWindow(width, height, "Conceptum", NULL, NULL);
     glfwSetWindowPos(m_window, (1920 - width) / 2, 32);
     if (m_window == NULL)
     {
