@@ -5,17 +5,18 @@
 #include "Transform.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "ShaderCompiler.h"
+#include "ShaderProgram.h"
+#include <glm/gtc/type_ptr.hpp>
 
-RenderSystem::RenderSystem(ECSContainer &ecsContainer, const std::set<Entity>& entities)
+RenderSystem::RenderSystem(ECSContainer &ecsContainer)
     : m_ecsContainer(ecsContainer)
-    , m_entities(entities)
 {
-    loadBuffers();
 }
 
-void RenderSystem::loadBuffers() const
+void RenderSystem::loadBuffers(const std::set<Entity>& entities) const
 {
-    for (auto entity : m_entities)
+    for (auto entity : entities)
     {
         auto& mesh = m_ecsContainer.GetComponent<Mesh>(entity);
         auto& material = m_ecsContainer.GetComponent<Material>(entity);
@@ -76,34 +77,77 @@ glm::mat4 getTransform(const Transform &transformComponent)
     return transform;
 }
 
-void RenderSystem::Progress(float /*timeDelta*/)
+void RenderSystem::Progress(float /*timeDelta*/, const std::set<Entity>& entities)
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthFunc(GL_GREATER);
-    for (auto entity : m_entities)
+    for (auto entity : entities)
     {
         auto& mesh = m_ecsContainer.GetComponent<Mesh>(entity);
         auto& material = m_ecsContainer.GetComponent<Material>(entity);
         auto& transform = m_ecsContainer.GetComponent<Transform>(entity);
-        auto texture = material.getTexture();
         auto shader = material.getShader();
 
-        shader->use();
+        UseShaderProgram(shader);
+
         auto textureId = material.getTextureId();
         auto vao = mesh.getVao();
         glBindTexture(GL_TEXTURE_2D, textureId);
         glBindVertexArray(vao);
-        shader->setBool("drawTexture", true);
-        shader->setInt("ourTexture", textureId);
+        setBool(shader, "drawTexture", true);
+        setInt(shader, "ourTexture", textureId);
         auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
         view = glm::rotate(view, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         auto projection = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, 1.0f, -1.0f));
         projection = glm::perspective(glm::radians(45.0f), 800.0f / 800.0f, 0.1f, 100.0f) * projection;
-        shader->setMat4("model", getTransform(transform));
-        shader->setMat4("view", view);
-        shader->setMat4("projection", projection);
+        setMat4(shader, "model", getTransform(transform));
+        setMat4(shader, "view", view);
+        setMat4(shader, "projection", projection);
         auto indices = mesh.getIndices();
         glDrawElements(GL_TRIANGLES, indices.size() * sizeof(unsigned int), GL_UNSIGNED_INT, 0);
     }
+}
+
+int RenderSystem::CreateShaderProgram(const std::string& vertexShaderSource, const std::string& fragmentShaderSource) const
+{
+    int vertexShader = ShaderCompiler::compileShader(vertexShaderSource, ShaderCompiler::ShaderType::Vertex);
+    int fragmentShader = ShaderCompiler::compileShader(fragmentShaderSource, ShaderCompiler::ShaderType::Fragment);
+    
+    auto program = Program::createProgram({vertexShader, fragmentShader});
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return program;
+}
+
+void RenderSystem::UseShaderProgram(int program)
+{
+    glUseProgram(program);
+}
+
+void RenderSystem::setBool(int shaderProgram, const std::string& name, bool value) const
+{
+    glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), (int)value);
+}
+
+void RenderSystem::setInt(int shaderProgram, const std::string& name, int value) const
+{
+    glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
+}
+
+void RenderSystem::setFloat(int shaderProgram, const std::string& name, float value) const
+{
+    glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
+}
+
+void RenderSystem::setVec3(int shaderProgram, const std::string& name, glm::vec3 value) const
+{
+    glUniform3f(glGetUniformLocation(shaderProgram, name.c_str()), value.x, value.y, value.z);
+}
+
+void RenderSystem::setMat4(int shaderProgram, const std::string& name, glm::mat4 value) const
+{
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }

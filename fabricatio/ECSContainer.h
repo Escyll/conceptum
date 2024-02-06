@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <cassert>
 #include <typeindex>
@@ -104,7 +105,7 @@ class System
 {
 public:
     virtual ~System() = default;
-    virtual void Progress(float timeDelta) = 0;
+    virtual void Progress(float timeDelta, const std::set<Entity>& entities) = 0;
 };
 
 #endif

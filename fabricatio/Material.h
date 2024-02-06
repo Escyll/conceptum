@@ -5,18 +5,16 @@
 
 #include <string>
 
-#include "ShaderProgram.h"
-
 class Material
 {
 public:
     Material() = default;
     Material(Material&) = delete;
     Material(Material&&);
-    Material(ShaderProgram *program, const std::string &texturePath);
+    Material(int program, const std::string &texturePath);
     ~Material();
     Material& operator=(Material&& material);
-    const ShaderProgram *getShader() const;
+    int getShader() const;
     const unsigned char *getTexture() const;
 
     unsigned int getTextureId() const;
@@ -27,7 +25,7 @@ public:
     unsigned int getTextureChannels() const;
 
 private:
-    ShaderProgram *m_shader;
+    int m_shader;
     unsigned char *m_textureData;
     unsigned int m_textureId;
     unsigned int m_textureWidth;

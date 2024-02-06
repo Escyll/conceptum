@@ -2,26 +2,28 @@ add_executable(fabricatio)
 
 target_sources(fabricatio
     PRIVATE
-      AppWindow.cpp
-      AppWindow.h
-      Clock.cpp
-      Clock.h
-      main.cpp
-      Material.cpp
-      Material.h
-      Mesh.cpp
-      Mesh.h      
-      
-      
-      Renderer.cpp
-      Renderer.h
-      ShaderCompiler.cpp
-      ShaderCompiler.h
-      ShaderProgram.cpp
-      ShaderProgram.h
-      Transform.h
-      ECSContainer.h
-)
+      "AppWindow.cpp"
+      "AppWindow.h"
+      "Clock.cpp"
+      "Clock.h"
+      "ECSContainer.h"
+      "main.cpp"
+      "Material.cpp"
+      "Material.h"
+      "Mesh.cpp"
+      "Mesh.h"   
+      "Renderer.cpp"
+      "Renderer.h"
+      "ShaderCompiler.cpp"
+      "ShaderCompiler.h"
+      "ShaderProgram.cpp"
+      "ShaderProgram.h"
+      "SpinSystem.h"
+      "SpinSystem.cpp"
+      "Transform.h"
+      "IO.h"
+      "IO.cpp"
+ "RenderSystem.h" "RenderSystem.cpp")
 
 target_link_libraries(fabricatio PRIVATE glfw OpenGL::GL glad glm::glm stb_image)
 

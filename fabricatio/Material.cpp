@@ -14,7 +14,7 @@ Material::Material(Material&& material)
 	material.m_textureData = nullptr;
 }
 
-Material::Material(ShaderProgram* shaderProgram, const std::string& texturePath)
+Material::Material(int shaderProgram, const std::string& texturePath)
 	: m_shader(shaderProgram)
 	, m_textureId(0)
 {
@@ -46,7 +46,7 @@ Material& Material::operator=(Material&& material)
 	return *this;
 }
 
-const ShaderProgram* Material::getShader() const
+int Material::getShader() const
 {
 	return m_shader;
 }

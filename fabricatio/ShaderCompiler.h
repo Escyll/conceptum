@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace ShaderCompiler
 {
 
@@ -12,7 +14,7 @@ namespace ShaderCompiler
         Fragment
     };
 
-    int compileShader(std::string path, ShaderType type);
+    int compileShader(const std::string& path, ShaderType type);
 
 }
 

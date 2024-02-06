@@ -2,9 +2,6 @@
 #include <chrono>
 #include <filesystem>
 #include <cmath>
-#include <glad/glad.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <set>
 
 #include "AppWindow.h"
@@ -16,30 +13,24 @@
 #include "Transform.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "SpinSystem.h"
+#include "IO.h"
 
 int main()
 {
     try
     {
+        ECSContainer ecs;
+        RenderSystem renderSystem(ecs);
         std::cout << "Current path is " << std::filesystem::current_path() << '\n';
         AppWindow appWindow(1000, 1000);
 
-        int standardVertexShader = ShaderCompiler::compileShader("shaders/standard.vert", ShaderCompiler::ShaderType::Vertex);
-        int standardFragmentShader = ShaderCompiler::compileShader("shaders/standard.frag", ShaderCompiler::ShaderType::Fragment);
-        int underwaterFragmentShader = ShaderCompiler::compileShader("shaders/underwater.frag", ShaderCompiler::ShaderType::Fragment);
+        auto standardVert = IO::readFile("shaders/standard.vert");
+        auto standardFrag = IO::readFile("shaders/standard.frag");
+        auto underwaterFrag = IO::readFile("shaders/underwater.frag");
+        auto standardProgram = renderSystem.CreateShaderProgram(standardVert, standardFrag);
+        auto underwaterProgram = renderSystem.CreateShaderProgram(standardVert, underwaterFrag);
 
-        auto standardProgram = ShaderProgram({standardVertexShader, standardFragmentShader});
-        auto underwaterProgram = ShaderProgram({standardVertexShader, underwaterFragmentShader});
-
-        glDeleteShader(standardVertexShader);
-        glDeleteShader(standardFragmentShader);
-        glDeleteShader(underwaterFragmentShader);
-        
-        struct TimeSpin
-        {
-            glm::vec3 rotation{ 1.0f, 0.0f, 0.0f };
-        };
-        ECSContainer ecs;
         ecs.Register<Transform>();
         ecs.Register<Mesh>();
         ecs.Register<Material>();
@@ -54,29 +45,13 @@ int main()
             { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f },
             { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f },
             { 0, 1, 2, 1, 3, 2 }));
-        ecs.AddComponent<Material>(containerEntity, Material(&underwaterProgram, "assets/containers.jpg"));
+        ecs.AddComponent<Material>(containerEntity, Material(underwaterProgram, "assets/containers.jpg"));
         ecs.AddComponent<TimeSpin>(containerEntity);
-
-        class SpinSystem : public System
-        {
-        public:
-            SpinSystem(ECSContainer& ecs, const std::set<Entity>& entities) : m_ecs(ecs), m_entities(entities) {}
-            void Progress(float timeDelta) override
-            {
-                for (auto entity : m_entities)
-                {
-                    auto& timeSpin = m_ecs.GetComponent<TimeSpin>(entity);
-                    auto& transform = m_ecs.GetComponent<Transform>(entity);
-                    transform.rotation += timeDelta * timeSpin.rotation;
-                }
-            }
-        private:
-            ECSContainer& m_ecs;
-            std::set<Entity> m_entities;
-        };
+        
         std::set<Entity> entities = { containerEntity };
-        SpinSystem spinSystem(ecs, entities);
-        RenderSystem renderSystem(ecs, entities);
+        SpinSystem spinSystem(ecs);
+        
+        renderSystem.loadBuffers(entities);
         std::vector<System*> systems { &spinSystem, &renderSystem };
 
         Clock clock;
@@ -95,7 +70,8 @@ int main()
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
                 {
-                    system->Progress(timeDelta);
+                    renderSystem.UseShaderProgram(standardProgram);
+                    system->Progress(timeDelta, entities);
                 }
                 appWindow.swapBuffer();
 

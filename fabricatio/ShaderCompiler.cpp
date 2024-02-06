@@ -6,21 +6,7 @@
 #include "ShaderCompiler.h"
 
 namespace ShaderCompiler
-{
-
-    std::string readShader(std::string path)
-    {
-        using namespace std::string_literals;
-        std::ifstream t(path);
-        if (t.fail())
-        {
-            std::cout << "Could not open "s + path << std::endl;
-        }
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        return buffer.str();
-    }
-
+{       
     GLuint ShaderTypeToGLuint(ShaderType type)
     {
         switch (type)
@@ -37,10 +23,8 @@ namespace ShaderCompiler
         }
     }
 
-    int compileShader(std::string path, ShaderType type)
+    int compileShader(const std::string& shaderSource, ShaderType type)
     {
-        auto shaderSource = readShader(path);
-
         unsigned int shader = glCreateShader(ShaderTypeToGLuint(type));
         const char *c_str;
         glShaderSource(shader, 1, &(c_str = shaderSource.c_str()), NULL);
@@ -53,10 +37,9 @@ namespace ShaderCompiler
         if (!success)
         {
             glGetShaderInfoLog(shader, 512, NULL, infoLog);
-            throw std::runtime_error("Shader compilation failed for " + path + "\n" + infoLog);
+            throw std::runtime_error(std::string("Shader compilation failed \n") + infoLog);
         }
-        std::cout << "Compiled shader " << shader << " from source " << path << std::endl;
+        std::cout << "Compiled shader " << shader << std::endl;
         return shader;
     }
-
 }
