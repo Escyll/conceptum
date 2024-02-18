@@ -1,0 +1,30 @@
+filetype plugin indent on
+" show existing tab with 4 spaces width
+set tabstop=4
+" when indenting with '>', use 4 spaces width
+set shiftwidth=4
+" On pressing tab, insert 4 spaces
+set expandtab
+let g:blab = "fliep"
+if exists("g:NERDTree") && !g:NERDTree.IsOpen()
+    NERDTree
+endif
+let buildPath = getcwd() . "/build/"
+function RunCmake()
+    execute '!cmake ' . g:buildPath
+endfunction
+function Build()
+    execute '!cmake ' . g:buildPath . ' ; cmake --build ' . g:buildPath
+endfunction
+
+function Run()
+    execute '!cd ' . g:buildPath . 'fabricatio/ ; ./fabricatio'
+endfunction
+
+imap <F7> <ESC> :call RunCmake()<CR>
+map <F7> <ESC> :call RunCmake()<CR>
+imap <F6> <ESC> :call Build()<CR>
+map <F6> :call Build()<CR>
+imap <F5> <ESC> :call Build() <bar> :call Run()<CR>
+map <F5> :call Build() <bar> :call Run()<CR>
+map <F2> :NERDTreeFind <bar> :NERDTreeFocus<CR>

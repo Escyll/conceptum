@@ -17,7 +17,7 @@ class SpinSystem : public System
 {
 public:
     SpinSystem(ECSContainer& ecs);
-    void Progress(float timeDelta, const std::set<Entity>& entities) override;
+    void progress(float timeDelta, const std::set<Entity>& entities) override;
     
 private:
     ECSContainer& m_ecs;

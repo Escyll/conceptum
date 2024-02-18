@@ -3,55 +3,60 @@
 #include <filesystem>
 #include <cmath>
 #include <set>
+#include <algorithm>
 
-#include "AppWindow.h"
-#include "ShaderCompiler.h"
-#include "ShaderProgram.h"
+#include "GlAppWindow.h"
 #include "Clock.h"
-#include "Renderer.h"
+#include "RenderSystem.h"
 #include "ECSContainer.h"
 #include "Transform.h"
-#include "Mesh.h"
+#include "producentis/Mesh.h"
 #include "Material.h"
 #include "SpinSystem.h"
 #include "IO.h"
+#include "NixRendererLoader.h"
+#include "MeshCatalog.h"
 
 int main()
 {
     try
     {
-        ECSContainer ecs;
-        RenderSystem renderSystem(ecs);
+        std::cout << "Starting" << std::endl;
+        auto renderer = createRenderer();
+        std::cout << "Renderer created" << std::endl;
+
         std::cout << "Current path is " << std::filesystem::current_path() << '\n';
-        AppWindow appWindow(1000, 1000);
+        AppWindow appWindow(renderer, 1000, 1000);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
         auto standardFrag = IO::readFile("shaders/standard.frag");
         auto underwaterFrag = IO::readFile("shaders/underwater.frag");
-        auto standardProgram = renderSystem.CreateShaderProgram(standardVert, standardFrag);
-        auto underwaterProgram = renderSystem.CreateShaderProgram(standardVert, underwaterFrag);
+        auto standardProgram = renderer->createShaderProgram(standardVert, standardFrag);
+        auto underwaterProgram = renderer->createShaderProgram(standardVert, underwaterFrag);
 
-        ecs.Register<Transform>();
-        ecs.Register<Mesh>();
-        ecs.Register<Material>();
-        ecs.Register<TimeSpin>();
+        MeshCatalog meshCatalog;
+        meshCatalog.loadMeshes("assets/meshes");
+        std::ranges::for_each(meshCatalog, [renderer] (auto namedMesh) { renderer->loadMesh(namedMesh.second); });
+        
+        ECSContainer ecs;
+        ecs.registerType<Transform>();
+        ecs.registerType<Mesh*>();
+        ecs.registerType<Material>();
+        ecs.registerType<TimeSpin>();
 
-        Entity containerEntity = ecs.CreateEntity();
+        Entity containerEntity = ecs.createEntity();
         Transform transform;
         transform.location = glm::vec3(-0.5f * std::sqrt(2.f) * 6.0f, 0.0f, 0.5f * std::sqrt(2.f) * 6.0f);
         transform.rotation = glm::vec3(0.0f, glm::radians(-45.f), 0.0f);
-        ecs.AddComponent<Transform>(containerEntity, std::move(transform));
-        ecs.AddComponent<Mesh>(containerEntity, Mesh({ -0.9f, -0.9f, 0.0f, 0.9f, -0.9f, 0.0f, -0.9f, 0.9f, 0.0f, 0.9f, 0.9f, 0.0f },
-            { 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f },
-            { 0, 1, 2, 1, 3, 2 }));
-        ecs.AddComponent<Material>(containerEntity, Material(underwaterProgram, "assets/containers.jpg"));
-        ecs.AddComponent<TimeSpin>(containerEntity);
+        ecs.addComponent<Transform>(containerEntity, std::move(transform));
+        ecs.addComponent<Mesh*>(containerEntity, meshCatalog.getMesh("cat/cat.obj"));
+        ecs.addComponent<Material>(containerEntity, Material(underwaterProgram, "assets/textures/containers.jpg"));
+        // ecs.AddComponent<TimeSpin>(containerEntity);
         
         std::set<Entity> entities = { containerEntity };
+
         SpinSystem spinSystem(ecs);
-        
-        renderSystem.loadBuffers(entities);
+        RenderSystem renderSystem(ecs, renderer);
         std::vector<System*> systems { &spinSystem, &renderSystem };
 
         Clock clock;
@@ -70,8 +75,8 @@ int main()
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
                 {
-                    renderSystem.UseShaderProgram(standardProgram);
-                    system->Progress(timeDelta, entities);
+                    //renderSystem.UseShaderProgram(standardProgram);
+                    system->progress(timeDelta, entities);
                 }
                 appWindow.swapBuffer();
 
@@ -79,6 +84,7 @@ int main()
             }
             lastUpdateTime = elapsedSeconds;
         }
+        destroyRenderer(renderer);
     }
     catch (std::exception &e)
     {

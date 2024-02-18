@@ -1,6 +1,5 @@
 #version 450 core
 
-in vec3 vertexColor;
 in vec3 vertexPos;
 in vec2 TexCoord;
 
@@ -28,5 +27,6 @@ void main()
     // float depth = LinearizeDepth(gl_FragCoord.z) / far; 
     // FragColor = vec4(vec3(depth), 1.0);
 
-    FragColor = vec4(vec3((vertexPos.x+0.9)/1.8,(vertexPos.y+0.9)/1.8,vertexPos.z-2.5f - 3.0f), 1.0f);
+    // FragColor = vec4(vec3((vertexPos.x+0.9)/1.8,(vertexPos.y+0.9)/1.8,vertexPos.z-2.5f - 3.0f), 1.0f);
+    FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 }

@@ -4,7 +4,7 @@
 #include <string>
 
 namespace IO {
-	std::string readFile(const std::string& path);
+    std::string readFile(const std::string& path);
 }
 
 #endif // !IO_H

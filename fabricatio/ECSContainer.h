@@ -23,28 +23,33 @@ template <typename T>
 class ComponentArray : public IComponentArray
 {
 public:
-    void AddComponentTo(Entity entity)
+    void addComponentTo(Entity entity)
     {
-        AddComponentTo(entity, T());
+        addComponentTo(entity, T());
     }
 
-    void AddComponentTo(Entity entity, T&& component)
+    void addComponentTo(Entity entity, T&& component)
     {
         assert(!m_entity_index_map.contains(entity) && "Component already added for entity");
         m_components.emplace_back(std::move(component));
         m_entity_index_map[entity] = m_components.size() - 1;
     }
 
-    void ModifyComponent(Entity entity, T&& component)
+    void modifyComponent(Entity entity, T&& component)
     {
         assert(m_entity_index_map.contains(entity));
         m_components[m_entity_index_map[entity]] = std::move(component);
     }
 
-    T& GetComponent(Entity entity)
+    T& getComponent(Entity entity)
     {
         assert(m_entity_index_map.contains(entity));
         return m_components[m_entity_index_map[entity]];
+    }
+
+    bool contains(Entity entity)
+    {
+        return m_entity_index_map.contains(entity);
     }
 
 private:
@@ -55,41 +60,49 @@ private:
 class ECSContainer
 {
 public:
-    Entity CreateEntity()
+    Entity createEntity()
     {
         // TODO, maintain pool of entites
         return m_nextEntity++;
     }
     template <typename T>
-    void AddComponent(Entity entity)
+    void addComponent(Entity entity)
     {
         ComponentArray<T> *componentArray = dynamic_cast<ComponentArray<T> *>(m_componentArrays[std::type_index(typeid(T))].get());
-        componentArray->AddComponentTo(entity);
+        componentArray->addComponentTo(entity);
     }
 
     template <typename T>
-    void AddComponent(Entity entity, T&& component)
+    void addComponent(Entity entity, T&& component)
     {
         ComponentArray<T>* componentArray = dynamic_cast<ComponentArray<T> *>(m_componentArrays[std::type_index(typeid(T))].get());
-        componentArray->AddComponentTo(entity, std::move(component));
+        componentArray->addComponentTo(entity, std::move(component));
     }
 
     template <typename T>
-    void ModifyComponent(Entity entity, T&& component)
+    void modifyComponent(Entity entity, T&& component)
     {
         ComponentArray<T> *componentArray = dynamic_cast<ComponentArray<T> *>(m_componentArrays[std::type_index(typeid(T))].get());
-        componentArray->ModifyComponent(entity, std::move(component));
+        componentArray->modifyComponent(entity, std::move(component));
     }
 
     template <typename T>
-    T& GetComponent(Entity entity)
+    T& getComponent(Entity entity)
     {
         ComponentArray<T> *componentArray = dynamic_cast<ComponentArray<T> *>(m_componentArrays[std::type_index(typeid(T))].get());
-        return componentArray->GetComponent(entity);
+        return componentArray->getComponent(entity);
     }
 
     template <typename T>
-    void Register()
+    bool hasComponent(Entity entity)
+    {
+        ComponentArray<T> *componentArray = dynamic_cast<ComponentArray<T> *>(m_componentArrays[std::type_index(typeid(T))].get());
+        return componentArray->contains(entity);
+    }
+
+
+    template <typename T>
+    void registerType()
     {
         assert(m_componentArrays.find(std::type_index(typeid(T))) == m_componentArrays.end() && "Component already registered");
         m_componentArrays[std::type_index(typeid(T))] = std::make_unique<ComponentArray<T>>();
@@ -105,7 +118,7 @@ class System
 {
 public:
     virtual ~System() = default;
-    virtual void Progress(float timeDelta, const std::set<Entity>& entities) = 0;
+    virtual void progress(float timeDelta, const std::set<Entity>& entities) = 0;
 };
 
 #endif

@@ -2,12 +2,15 @@
 
 SpinSystem::SpinSystem(ECSContainer& ecs) : m_ecs(ecs) {}
 
-void SpinSystem::Progress(float timeDelta, const std::set<Entity>& entities)
+void SpinSystem::progress(float timeDelta, const std::set<Entity>& entities)
 {
     for (auto entity : entities)
     {
-        auto& timeSpin = m_ecs.GetComponent<TimeSpin>(entity);
-        auto& transform = m_ecs.GetComponent<Transform>(entity);
-        transform.rotation += timeDelta * timeSpin.rotation;
+        if (m_ecs.hasComponent<TimeSpin>(entity))
+        {
+            auto& timeSpin = m_ecs.getComponent<TimeSpin>(entity);
+            auto& transform = m_ecs.getComponent<Transform>(entity);
+            transform.rotation += timeDelta * timeSpin.rotation;
+        }
     }
 }

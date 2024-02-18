@@ -1,31 +1,39 @@
 add_executable(fabricatio)
 
-target_sources(fabricatio
-    PRIVATE
-      "AppWindow.cpp"
-      "AppWindow.h"
-      "Clock.cpp"
-      "Clock.h"
-      "ECSContainer.h"
-      "main.cpp"
-      "Material.cpp"
-      "Material.h"
-      "Mesh.cpp"
-      "Mesh.h"   
-      "Renderer.cpp"
-      "Renderer.h"
-      "ShaderCompiler.cpp"
-      "ShaderCompiler.h"
-      "ShaderProgram.cpp"
-      "ShaderProgram.h"
-      "SpinSystem.h"
-      "SpinSystem.cpp"
-      "Transform.h"
-      "IO.h"
-      "IO.cpp"
- "RenderSystem.h" "RenderSystem.cpp")
+set(sources
+    "GlAppWindow.cpp"
+    "GlAppWindow.h"
+    "Clock.cpp"
+    "Clock.h"
+    "ECSContainer.h"
+    "main.cpp"
+    "Material.cpp"
+    "Material.h"
+    "RenderSystem.cpp"
+    "RenderSystem.h"
+    "SpinSystem.h"
+    "SpinSystem.cpp"
+    "Transform.h"
+    "IO.h"
+    "IO.cpp"
+    "MeshCatalog.h"
+    "MeshCatalog.cpp"
+)
 
-target_link_libraries(fabricatio PRIVATE glfw OpenGL::GL glad glm::glm stb_image)
+if(LINUX)
+    list(APPEND sources "NixRendererLoader.h" "NixRendererLoader.cpp")
+elseif(WINDOWS)
+    list(APPEND sources "Win32RendererLoader.h" "Win32RendererLoader.cpp")
+endif()
+
+target_sources(fabricatio
+  PRIVATE
+    ${sources}
+    "NixRendererLoader.h"
+    "NixRendererLoader.cpp"
+)
+
+target_link_libraries(fabricatio PRIVATE glfw glm::glm stb_image producentis)
 
 add_custom_target(CopyShaders
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/shaders
