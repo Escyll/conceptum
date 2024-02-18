@@ -46,8 +46,7 @@ int main()
 
         Entity containerEntity = ecs.createEntity();
         Transform transform;
-        transform.location = glm::vec3(-0.5f * std::sqrt(2.f) * 6.0f, 0.0f, 0.5f * std::sqrt(2.f) * 6.0f);
-        transform.rotation = glm::vec3(0.0f, glm::radians(-45.f), 0.0f);
+        transform.location = glm::vec3(0.0f, 100.0f, -25.0f);
         ecs.addComponent<Transform>(containerEntity, std::move(transform));
         ecs.addComponent<Mesh*>(containerEntity, meshCatalog.getMesh("cat/cat.obj"));
         ecs.addComponent<Material>(containerEntity, Material(underwaterProgram, "assets/textures/containers.jpg"));
