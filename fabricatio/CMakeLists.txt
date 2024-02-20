@@ -7,8 +7,6 @@ set(sources
     "Clock.h"
     "ECSContainer.h"
     "main.cpp"
-    "Material.cpp"
-    "Material.h"
     "RenderSystem.cpp"
     "RenderSystem.h"
     "SpinSystem.h"
@@ -35,11 +33,10 @@ target_sources(fabricatio
 
 target_link_libraries(fabricatio PRIVATE glfw glm::glm stb_image producentis)
 
-add_custom_target(CopyShaders
+add_custom_target(CopyRuntimeData
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/shaders
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/assets
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/shaders ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/shaders
-)
-add_custom_target(CopyAssets
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/assets ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/assets
 )
-add_dependencies(fabricatio CopyShaders)
-add_dependencies(fabricatio CopyAssets)
+add_dependencies(fabricatio CopyRuntimeData)

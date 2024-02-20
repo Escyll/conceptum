@@ -3,7 +3,7 @@
 
 #include "RenderSystem.h"
 #include "Transform.h"
-#include "Material.h"
+#include "producentis/Material.h"
 
 RenderSystem::RenderSystem(ECSContainer &ecsContainer, Renderer* renderer)
     : m_ecsContainer(ecsContainer)
@@ -28,9 +28,9 @@ void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity>& entitie
     for (auto entity : entities)
     {
         auto mesh = m_ecsContainer.getComponent<Mesh*>(entity);
-        auto& material = m_ecsContainer.getComponent<Material>(entity);
+        auto material = mesh->getMaterial();
         auto& transform = m_ecsContainer.getComponent<Transform>(entity);
-        auto shader = material.getShader();
+        auto shader = material->getShader();
 
         auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
         auto projection = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));

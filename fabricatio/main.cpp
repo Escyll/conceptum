@@ -11,7 +11,7 @@
 #include "ECSContainer.h"
 #include "Transform.h"
 #include "producentis/Mesh.h"
-#include "Material.h"
+#include "producentis/Material.h"
 #include "SpinSystem.h"
 #include "IO.h"
 #include "NixRendererLoader.h"
@@ -36,7 +36,12 @@ int main()
 
         MeshCatalog meshCatalog;
         meshCatalog.loadMeshes("assets/meshes");
-        std::ranges::for_each(meshCatalog, [renderer] (auto namedMesh) { renderer->loadMesh(namedMesh.second); });
+        std::ranges::for_each(meshCatalog, [renderer, underwaterProgram] (auto namedMesh) 
+                {
+                    renderer->loadMesh(namedMesh.second);
+                    auto material = namedMesh.second->getMaterial();
+                    material->setShader(underwaterProgram);
+                });
         
         ECSContainer ecs;
         ecs.registerType<Transform>();
@@ -44,15 +49,28 @@ int main()
         ecs.registerType<Material>();
         ecs.registerType<TimeSpin>();
 
-        Entity containerEntity = ecs.createEntity();
+        Entity punkEntity = ecs.createEntity();
         Transform transform;
+        transform.location = glm::vec3(-35.0f, 100.0f, -25.0f);
+        ecs.addComponent<Transform>(punkEntity, std::move(transform));
+        ecs.addComponent<Mesh*>(punkEntity, meshCatalog.getMesh("punk/punk.obj"));
+        ecs.addComponent<TimeSpin>(punkEntity);
+
+        Entity tijgerEntity = ecs.createEntity();
+        transform.location = glm::vec3(35.0f, 100.0f, -25.0f);
+        ecs.addComponent<Transform>(tijgerEntity, std::move(transform));
+        ecs.addComponent<Mesh*>(tijgerEntity, meshCatalog.getMesh("tijger/tijger.obj"));
+        ecs.addComponent<TimeSpin>(tijgerEntity);
+        auto& timeSpin = ecs.getComponent<TimeSpin>(tijgerEntity);
+        timeSpin.rotation.z = -1.0f;
+
+        Entity girlEntity = ecs.createEntity();
         transform.location = glm::vec3(0.0f, 100.0f, -25.0f);
-        ecs.addComponent<Transform>(containerEntity, std::move(transform));
-        ecs.addComponent<Mesh*>(containerEntity, meshCatalog.getMesh("cat/cat.obj"));
-        ecs.addComponent<Material>(containerEntity, Material(underwaterProgram, "assets/textures/containers.jpg"));
-        // ecs.AddComponent<TimeSpin>(containerEntity);
-        
-        std::set<Entity> entities = { containerEntity };
+        transform.scale = glm::vec3(30.f, 30.f, 30.f);
+        ecs.addComponent<Transform>(girlEntity, std::move(transform));
+        ecs.addComponent<Mesh*>(girlEntity, meshCatalog.getMesh("katinka/Girl.obj"));
+
+        std::set<Entity> entities = { punkEntity, tijgerEntity, girlEntity };
 
         SpinSystem spinSystem(ecs);
         RenderSystem renderSystem(ecs, renderer);

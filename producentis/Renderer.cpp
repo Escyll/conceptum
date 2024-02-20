@@ -27,6 +27,7 @@ void Renderer::initialize() const
     {
        throw std::runtime_error("Failed to initialize GLAD");
     }
+    glEnable(GL_DEPTH_TEST);
 }
 
 int Renderer::createShaderProgram(const std::string& vertexShaderSource, const std::string& fragmentShaderSource) const
@@ -78,6 +79,29 @@ void glBufferVector(GLenum target, const std::vector<T>& data, GLenum usage)
     glBufferData(target, data.size() * sizeof(T), &data[0], usage);
 }
 
+void loadMaterial(Material* material)
+{
+    auto diffuseTexture = material->getDiffuseTexture();
+
+    uint32_t diffuseTextureId;
+    glGenTextures(1, &diffuseTextureId);
+    glBindTexture(GL_TEXTURE_2D, diffuseTextureId);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    auto width = diffuseTexture->getWidth();
+    auto height = diffuseTexture->getHeight();
+    auto channels = diffuseTexture->getChannels();
+    auto data = diffuseTexture->getData();
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, diffuseTexture->getWidth(), diffuseTexture->getHeight(), 0, GL_RGB, GL_UNSIGNED_BYTE, diffuseTexture->getData());
+    glGenerateMipmap(GL_TEXTURE_2D);
+    diffuseTexture->setId(diffuseTextureId);
+}
+
 void Renderer::loadMesh(Mesh* mesh) const
 {
     uint32_t VAO;
@@ -103,6 +127,7 @@ void Renderer::loadMesh(Mesh* mesh) const
     glBindVertexArray(0);
 
     mesh->setVao(VAO);
+    loadMaterial(mesh->getMaterial());
 }
 
 // TODO: view and project can be done separate?
@@ -110,10 +135,10 @@ void Renderer::drawMesh(Mesh* mesh, int shader, const glm::mat4& model, const gl
 {
     useShaderProgram(shader);
     glBindVertexArray(mesh->getVao());
-    // auto textureId = material.getTextureId;
-    // glBindTexture(GL_TEXTURE_2D, textureId);
-    // setInt(shader, "ourTexture", textureId);
-    setBool(shader, "drawTexture", false);
+    auto textureId = mesh->getMaterial()->getDiffuseTexture()->getId();
+    glBindTexture(GL_TEXTURE_2D, textureId);
+    setInt(shader, "diffuseTexture", textureId);
+    setBool(shader, "drawTexture", true);
     setMat4(shader, "model", model);
     setMat4(shader, "view", view);
     setMat4(shader, "projection", projection);
@@ -125,7 +150,6 @@ void Renderer::clearScreen() const
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDepthFunc(GL_GREATER);
 }
 
 void Renderer::resizeViewport(int width, int height) const

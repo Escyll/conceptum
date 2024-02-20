@@ -4,7 +4,7 @@ in vec3 vertexPos;
 in vec2 TexCoord;
 
 uniform bool drawTexture;
-uniform sampler2D ourTexture;
+uniform sampler2D diffuseTexture;
 
 out vec4 FragColor;
 
@@ -29,4 +29,5 @@ void main()
 
     // FragColor = vec4(vec3((vertexPos.x+0.9)/1.8,(vertexPos.y+0.9)/1.8,vertexPos.z-2.5f - 3.0f), 1.0f);
     FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    FragColor = texture(diffuseTexture, TexCoord);
 }

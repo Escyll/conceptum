@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 
 namespace IO {
 
@@ -17,6 +18,8 @@ namespace IO {
         }
         std::stringstream buffer;
         buffer << t.rdbuf();
-        return buffer.str();
+        auto result = buffer.str();
+        result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
+        return result;
     }
 }

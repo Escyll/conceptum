@@ -2,6 +2,8 @@ add_library(producentis SHARED)
 
 target_sources(producentis
 	PRIVATE
+    "Material.h"
+    "Material.cpp"
     "Mesh.cpp"
     "Mesh.h"   
 	"Renderer.h"
@@ -10,6 +12,8 @@ target_sources(producentis
 	"ShaderCompiler.cpp"
 	"ShaderProgram.h"
 	"ShaderProgram.cpp"
+    "Texture.h"
+    "Texture.cpp"
 )
 
 target_include_directories(producentis PUBLIC ${CMAKE_SOURCE_DIR})
