@@ -2,6 +2,7 @@
 #define TEXTURE
 
 #include <cstdint>
+#include <glm/gtc/matrix_transform.hpp>
 
 class Texture
 {

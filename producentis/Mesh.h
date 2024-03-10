@@ -4,30 +4,39 @@
 #include <vector>
 #include <tuple>
 #include <cstdint>
+#include <memory>
+#include <map>
+#include <string>
 
 #include "Material.h"
+
+struct SubMesh {
+    uint64_t startIndex;
+    uint64_t indexCount;
+    std::string materialName;
+    uint32_t vao;
+};
 
 class Mesh
 {
 public:
-    using vertex = std::tuple<float, float, float>;
-    using uv = std::tuple<float, float>;
-    Mesh(const std::vector<vertex> &vertices, const std::vector<uv> &uvs, const std::vector<uint32_t> indices, std::unique_ptr<Material>&& material);
+    Mesh(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec2>& uvs, const std::vector<glm::vec3>& normals, const std::vector<glm::vec3>& tangents, const std::vector<glm::vec3>& bitangents, const std::vector<uint32_t>& indices, const std::vector<SubMesh>& subMeshes, std::map<std::string, std::unique_ptr<Material>>&& materials);
 
-    std::vector<float> getVertexBuffer() const;
-    std::vector<uint32_t> getIndices() const;
-    Material* getMaterial() const;
-
-    unsigned int getVao() const;
-    void setVao(uint32_t vao);
+    std::vector<float>& getVertexBuffer();
+    std::vector<uint32_t>& getIndices();
+    std::vector<SubMesh>& getSubMeshes();
+    std::map<std::string, std::unique_ptr<Material>>& getMaterials();
 
 private:
-    std::vector<vertex> m_vertices;
-    std::vector<uv> m_uvs;
+    std::vector<glm::vec3> m_vertices;
+    std::vector<glm::vec3> m_normals;
+    std::vector<glm::vec3> m_tangents;
+    std::vector<glm::vec3> m_bitangents;
+    std::vector<glm::vec2> m_uvs;
+    std::vector<SubMesh> m_subMeshes;
     std::vector<uint32_t> m_indices;
     std::vector<float> m_vertexBuffer;
-    unsigned int m_vao = 0;
-    std::unique_ptr<Material> m_material;
+    std::map<std::string, std::unique_ptr<Material>> m_materialsMap;
 };
 
 #endif

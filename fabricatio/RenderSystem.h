@@ -17,6 +17,7 @@ public:
     RenderSystem(ECSContainer &ecsContainer, Renderer* renderer);
 
     void progress(float timeDelta, const std::set<Entity>& entities) override;
+    int shader = 0;
 
 private:
     ECSContainer& m_ecsContainer;

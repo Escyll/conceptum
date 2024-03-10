@@ -5,27 +5,24 @@
 
 #include <string>
 #include <memory>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Texture.h"
 
-class Material
+struct Material
 {
-public:
-    Material() = default;
-    Material(Material&) = delete;
-    Material(Material&&);
-    Material(const std::string& name, std::unique_ptr<Texture>&& diffuseTexture);
-    Material& operator=(Material&& material);
-
-    std::string getName() const;
-    int getShader() const;
-    void setShader(int shader);
-    Texture* getDiffuseTexture() const;
-
-private:
-    int m_shader;
-    std::string m_name;
-    std::unique_ptr<Texture> m_diffuseTexture;
+    std::string name;
+    float specularExponent = 32;
+    glm::vec3 ambientColor {1.0, 1.0, 1.0};
+    glm::vec3 diffuseColor {1.0, 1.0, 1.0};
+    glm::vec3 specularColor {1.0, 1.0, 1.0};
+    glm::vec3 diffuseScale {1.0, 1.0, 1.0};
+    float normalStrength = 1.0;
+    glm::vec3 normalScale {1.0, 1.0, 1.0};
+    
+    std::unique_ptr<Texture> diffuseTexture;
+    std::unique_ptr<Texture> normalMap;
+    int shader;
 };
 
 #endif

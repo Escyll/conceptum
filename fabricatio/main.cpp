@@ -33,14 +33,15 @@ int main()
         auto underwaterFrag = IO::readFile("shaders/underwater.frag");
         auto standardProgram = renderer->createShaderProgram(standardVert, standardFrag);
         auto underwaterProgram = renderer->createShaderProgram(standardVert, underwaterFrag);
+        std::cout << "UNDERWATER: " << underwaterProgram << std::endl;
 
         MeshCatalog meshCatalog;
         meshCatalog.loadMeshes("assets/meshes");
         std::ranges::for_each(meshCatalog, [renderer, underwaterProgram] (auto namedMesh) 
                 {
                     renderer->loadMesh(namedMesh.second);
-                    auto material = namedMesh.second->getMaterial();
-                    material->setShader(underwaterProgram);
+                    // auto material = namedMesh.second->getMaterial();
+                    // material->setShader(underwaterProgram);
                 });
         
         ECSContainer ecs;
@@ -51,30 +52,40 @@ int main()
 
         Entity punkEntity = ecs.createEntity();
         Transform transform;
-        transform.location = glm::vec3(-35.0f, 100.0f, -25.0f);
+        transform.location = glm::vec3(-1.0f, -0.33f, 0.0f);
         ecs.addComponent<Transform>(punkEntity, std::move(transform));
         ecs.addComponent<Mesh*>(punkEntity, meshCatalog.getMesh("punk/punk.obj"));
-        ecs.addComponent<TimeSpin>(punkEntity);
 
         Entity tijgerEntity = ecs.createEntity();
-        transform.location = glm::vec3(35.0f, 100.0f, -25.0f);
+        transform = Transform();
+        transform.location = glm::vec3(1.0f, -0.33f, 0.0f);
+        transform.rotation = glm::vec3(0, 0, glm::radians(180.f));
         ecs.addComponent<Transform>(tijgerEntity, std::move(transform));
         ecs.addComponent<Mesh*>(tijgerEntity, meshCatalog.getMesh("tijger/tijger.obj"));
-        ecs.addComponent<TimeSpin>(tijgerEntity);
-        auto& timeSpin = ecs.getComponent<TimeSpin>(tijgerEntity);
-        timeSpin.rotation.z = -1.0f;
 
         Entity girlEntity = ecs.createEntity();
-        transform.location = glm::vec3(0.0f, 100.0f, -25.0f);
-        transform.scale = glm::vec3(30.f, 30.f, 30.f);
+        transform = Transform();
+        transform.location.y = 0.33;
         ecs.addComponent<Transform>(girlEntity, std::move(transform));
         ecs.addComponent<Mesh*>(girlEntity, meshCatalog.getMesh("katinka/Girl.obj"));
 
         std::set<Entity> entities = { punkEntity, tijgerEntity, girlEntity };
 
+        for (int i = -2; i < 3; i++)
+        {
+            Entity cubeEntity = ecs.createEntity();
+            transform = Transform();
+            transform.location.x = i;
+            ecs.addComponent<Transform>(cubeEntity, std::move(transform));
+            ecs.addComponent<Mesh*>(cubeEntity, meshCatalog.getMesh("cube/cube.obj"));
+            entities.insert(cubeEntity);
+        }
+
         SpinSystem spinSystem(ecs);
         RenderSystem renderSystem(ecs, renderer);
+        renderSystem.shader = underwaterProgram;
         std::vector<System*> systems { &spinSystem, &renderSystem };
+        // std::vector<System*> systems { &renderSystem };
 
         Clock clock;
         const float fpsLimit = 1.0f/240.0f;
@@ -92,7 +103,6 @@ int main()
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
                 {
-                    //renderSystem.UseShaderProgram(standardProgram);
                     system->progress(timeDelta, entities);
                 }
                 appWindow.swapBuffer();

@@ -28,14 +28,14 @@ void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity>& entitie
     for (auto entity : entities)
     {
         auto mesh = m_ecsContainer.getComponent<Mesh*>(entity);
-        auto material = mesh->getMaterial();
         auto& transform = m_ecsContainer.getComponent<Transform>(entity);
-        auto shader = material->getShader();
-
-        auto view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+        
+        Transform viewTransform;
+        viewTransform.location = glm::vec3(0.0, 6.0, -2.0f);
+        viewTransform.rotation = glm::vec3(glm::radians(10.f), 0, 0);
         auto projection = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        projection = glm::perspective(glm::radians(45.0f), 1920.0f / 1080.0f, 0.1f, 1000.0f) * projection;
-        m_renderer->drawMesh(mesh, shader, getTransform(transform), view, projection);
+        projection = glm::perspective(glm::radians(60.0f), 1920.0f / 1080.0f, 0.1f, 200.0f) * projection;
+        m_renderer->drawMesh(mesh, shader, getTransform(transform), getTransform(viewTransform), projection);
     }
 }
 

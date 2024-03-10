@@ -8,6 +8,7 @@ AppWindow::AppWindow(Renderer* renderer, int width, int height)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_SAMPLES, 16);
 
     m_window = glfwCreateWindow(width, height, "Fabricatio", NULL, NULL);
     glfwSetWindowPos(m_window, (1920 - width) / 2, 32);

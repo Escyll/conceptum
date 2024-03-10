@@ -1,40 +1,48 @@
 #include "Mesh.h"
 
-Mesh::Mesh(const std::vector<vertex> &vertices, const std::vector<uv> &uvs, const std::vector<uint32_t> indices, std::unique_ptr<Material>&& material)
-    : m_vertices(vertices), m_uvs(uvs), m_indices(indices), m_material(std::move(material))
+#include <cassert>
+
+Mesh::Mesh(const std::vector<glm::vec3>& vertices, const std::vector<glm::vec2>& uvs, const std::vector<glm::vec3>& normals, const std::vector<glm::vec3>& tangents, const std::vector<glm::vec3>& bitangents, const std::vector<uint32_t>& indices, const std::vector<SubMesh>& subMeshes, std::map<std::string, std::unique_ptr<Material>>&& materials)
+    : m_vertices(vertices), m_normals(normals), m_tangents(tangents), m_bitangents(bitangents), m_uvs(uvs), m_indices(indices), m_subMeshes(subMeshes), m_materialsMap(std::move(materials))
 {
-    m_vertexBuffer.reserve(5*m_vertices.size() + 2*m_uvs.size());
+    assert(m_vertices.size() == m_uvs.size() && m_vertices.size() == m_normals.size() && m_vertices.size() == m_tangents.size() && m_vertices.size() == m_bitangents.size());
+    auto size = m_vertices.size();
+    m_vertexBuffer.reserve((3+2+3+3+3)*size);
     for (int i = 0; i < m_vertices.size(); i++)
     {
-        m_vertexBuffer.push_back(std::get<0>(m_vertices[i]));
-        m_vertexBuffer.push_back(std::get<1>(m_vertices[i]));
-        m_vertexBuffer.push_back(std::get<2>(m_vertices[i]));
-        m_vertexBuffer.push_back(std::get<0>(m_uvs[i]));
-        m_vertexBuffer.push_back(std::get<1>(m_uvs[i]));
+        m_vertexBuffer.push_back(m_vertices[i].x);
+        m_vertexBuffer.push_back(m_vertices[i].y);
+        m_vertexBuffer.push_back(m_vertices[i].z);
+        m_vertexBuffer.push_back(m_uvs[i].x);
+        m_vertexBuffer.push_back(m_uvs[i].y);
+        m_vertexBuffer.push_back(m_normals[i].x);
+        m_vertexBuffer.push_back(m_normals[i].y);
+        m_vertexBuffer.push_back(m_normals[i].z);
+        m_vertexBuffer.push_back(m_tangents[i].x);
+        m_vertexBuffer.push_back(m_tangents[i].y);
+        m_vertexBuffer.push_back(m_tangents[i].z);
+        m_vertexBuffer.push_back(m_bitangents[i].x);
+        m_vertexBuffer.push_back(m_bitangents[i].y);
+        m_vertexBuffer.push_back(m_bitangents[i].z);
     }
 }
 
-std::vector<float> Mesh::getVertexBuffer() const
+std::vector<float>& Mesh::getVertexBuffer()
 {
     return m_vertexBuffer;
 }
 
-std::vector<uint32_t> Mesh::getIndices() const
+std::vector<uint32_t>& Mesh::getIndices()
 {
     return m_indices;
 }
 
-Material* Mesh::getMaterial() const
+std::vector<SubMesh>& Mesh::getSubMeshes()
 {
-    return m_material.get();
+    return m_subMeshes;
 }
 
-uint32_t Mesh::getVao() const
+std::map<std::string, std::unique_ptr<Material>>& Mesh::getMaterials()
 {
-    return m_vao;
-}
-
-void Mesh::setVao(uint32_t vao)
-{
-    m_vao = vao;
+    return m_materialsMap;
 }
