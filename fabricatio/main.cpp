@@ -16,6 +16,7 @@
 #include "IO.h"
 #include "NixRendererLoader.h"
 #include "MeshCatalog.h"
+#include "FastNoiseLite.h"
 
 int main()
 {
@@ -71,15 +72,28 @@ int main()
 
         std::set<Entity> entities = { punkEntity, tijgerEntity, girlEntity };
 
-        for (int i = -2; i < 3; i++)
+        FastNoiseLite noise;
+        noise.SetFrequency(1.0/40.0);
+        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+        for (int y = 0; y <= 100; y++)
         {
-            Entity cubeEntity = ecs.createEntity();
-            transform = Transform();
-            transform.location.x = i;
-            ecs.addComponent<Transform>(cubeEntity, std::move(transform));
-            ecs.addComponent<Mesh*>(cubeEntity, meshCatalog.getMesh("cube/cube.obj"));
-            entities.insert(cubeEntity);
+            for (int x = -100; x <= 100; x++)
+            {
+                float noiseVal = 0.5*noise.GetNoise((float)x, (float)y) + 0.5;
+                for (int z = 0; z <= (int)floor(20*noiseVal); z++)
+                {
+                    Entity cubeEntity = ecs.createEntity();
+                    transform = Transform();
+                    transform.location = glm::vec3(x, y, z);
+                    ecs.addComponent<Transform>(cubeEntity, std::move(transform));
+                    ecs.addComponent<Mesh*>(cubeEntity, meshCatalog.getMesh("cube/cube.obj"));
+                    entities.insert(cubeEntity);
+                }
+            }
         }
+
+
 
         SpinSystem spinSystem(ecs);
         RenderSystem renderSystem(ecs, renderer);

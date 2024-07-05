@@ -31,7 +31,7 @@ target_sources(fabricatio
     "NixRendererLoader.cpp"
 )
 
-target_link_libraries(fabricatio PRIVATE glfw glm::glm stb_image producentis)
+target_link_libraries(fabricatio PRIVATE glfw glm::glm stb_image producentis FastNoiseLite)
 
 add_custom_target(CopyRuntimeData
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_CURRENT_BINARY_DIR}/${Configuration}/shaders
