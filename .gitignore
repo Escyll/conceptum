@@ -3,3 +3,4 @@ build/
 out/
 CMakeLists.txt.user
 *.swp
+captures/

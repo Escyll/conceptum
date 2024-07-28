@@ -2,6 +2,8 @@ add_library(producentis SHARED)
 
 target_sources(producentis
 	PRIVATE
+    "AppWindow.h"
+	"AppWindowPrivate.h"
     "Material.h"
     "Material.cpp"
     "Mesh.cpp"
@@ -14,6 +16,11 @@ target_sources(producentis
 	"ShaderProgram.cpp"
     "Texture.h"
     "Texture.cpp"
+	"Camera.h"
+	"Camera.cpp"
+	"KeyEvent.h"
+	"KeyInput.h"
+	"Input.h"
 )
 
 target_include_directories(producentis PUBLIC ${CMAKE_SOURCE_DIR})

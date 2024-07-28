@@ -23,7 +23,8 @@ void main()
     gl_Position = projection * view * model * vec4(modelPos, 1.0f);
     vs_out.worldPos = vec3(model * vec4(modelPos, 1.0f));
     vs_out.uv = modelUV;
-    vs_out.normal = transpose(inverse(mat3(model))) * modelNormal; // Move to CPU
+    // vs_out.normal = transpose(inverse(mat3(model))) * modelNormal; // Move to CPU
+    vs_out.normal = modelNormal;
     vec3 t = normalize(vec3(model * vec4(modelTangent, 0.0)));
     vec3 b = normalize(vec3(model * vec4(modelBitangent, 0.0)));
     vec3 n = normalize(vec3(model * vec4(modelNormal, 0.0)));

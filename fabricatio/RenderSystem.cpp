@@ -4,10 +4,11 @@
 #include "RenderSystem.h"
 #include "Transform.h"
 #include "producentis/Material.h"
+#include "producentis/Mesh.h"
+#include "producentis/Renderer.h"
 
-RenderSystem::RenderSystem(ECSContainer &ecsContainer, Renderer* renderer)
-    : m_ecsContainer(ecsContainer)
-    , m_renderer(renderer)
+RenderSystem::RenderSystem(ECSContainer &ecsContainer, Camera &camera)
+    : m_ecsContainer(ecsContainer), m_camera(camera)
 {
 }
 
@@ -22,20 +23,14 @@ glm::mat4 getTransform(const Transform &transformComponent)
     return transform;
 }
 
-void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity>& entities)
+void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity> &entities)
 {
-    m_renderer->clearScreen();
+    clearScreen();
     for (auto entity : entities)
     {
-        auto mesh = m_ecsContainer.getComponent<Mesh*>(entity);
-        auto& transform = m_ecsContainer.getComponent<Transform>(entity);
-        
-        Transform viewTransform;
-        viewTransform.location = glm::vec3(0.0, 20.0, -20.0f);
-        viewTransform.rotation = glm::vec3(glm::radians(20.f), 0, 0);
-        auto projection = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        projection = glm::perspective(glm::radians(60.0f), 1920.0f / 1080.0f, 0.1f, 200.0f) * projection;
-        m_renderer->drawMesh(mesh, shader, getTransform(transform), getTransform(viewTransform), projection);
+        auto mesh = m_ecsContainer.getComponent<Mesh *>(entity);
+        auto &modelTransform = m_ecsContainer.getComponent<Transform>(entity);
+
+        drawMesh(mesh, shader, getTransform(modelTransform), m_camera.view(), m_camera.projection());
     }
 }
-

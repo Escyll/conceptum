@@ -13,13 +13,22 @@
 
 #include "MeshCatalog.h"
 
-inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
+bool replace(std::string &str, const std::string &from, const std::string &to)
+{
+    size_t start_pos = str.find(from);
+    if (start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
 }
 
-glm::vec3 readVec3(std::istringstream& stream)
+inline void ltrim(std::string &s)
+{
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch)
+                                    { return !std::isspace(ch); }));
+}
+
+glm::vec3 readVec3(std::istringstream &stream)
 {
     glm::vec3 result;
     stream >> result.x;
@@ -28,12 +37,12 @@ glm::vec3 readVec3(std::istringstream& stream)
     return result;
 }
 
-std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesystem::path& path)
+std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path)
 {
-    std::map<std::string, std::unique_ptr<Material>> result;
-    Material* currentMaterial = nullptr;
+    std::map<std::string, Material *> result;
+    Material *currentMaterial = nullptr;
 
-    std::istringstream fileContents(IO::readFile(path));
+    std::istringstream fileContents(IO::readFile(path.string()));
     std::string line;
     while (std::getline(fileContents, line))
     {
@@ -47,9 +56,10 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
             {
                 std::string name;
                 std::getline(lineStream, name);
-                std::cout << "\n" << name << std::endl;
-                result[name] = std::make_unique<Material>();
-                currentMaterial = result[name].get();
+                std::cout << "\n"
+                          << name << std::endl;
+                result[name] = new Material();
+                currentMaterial = result[name];
                 currentMaterial->name = name;
             }
             else if (word == "Ns")
@@ -76,7 +86,7 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
                 while (lineStream >> mapName)
                 {
                     if (mapName == "-s")
-                    {                        
+                    {
                         currentMaterial->diffuseScale = readVec3(lineStream);
                     }
                     else
@@ -85,10 +95,11 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
                         std::getline(lineStream, rest);
                         mapName += rest;
                         std::cout << mapName << std::endl;
-                        auto texturePath = path.parent_path() / mapName;
+                        auto texturePath = (path.parent_path() / mapName).string();
+                        replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
                         stbi_set_flip_vertically_on_load(true);
-                        unsigned char* textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+                        unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
                         currentMaterial->diffuseTexture = std::make_unique<Texture>(textureData, width, height, nrChannels);
                     }
                 }
@@ -99,12 +110,12 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
                 while (lineStream >> mapName)
                 {
                     if (mapName == "-bm")
-                    {                        
+                    {
                         lineStream >> currentMaterial->normalStrength;
                         std::cout << "-bm" << " " << currentMaterial->normalStrength << std::endl;
                     }
                     else if (mapName == "-s")
-                    {                        
+                    {
                         currentMaterial->normalScale = readVec3(lineStream);
                     }
                     else
@@ -113,12 +124,14 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
                         std::getline(lineStream, rest);
                         mapName += rest;
                         std::cout << mapName << std::endl;
-                        auto texturePath = path.parent_path() / mapName;
+                        auto texturePath = (path.parent_path() / mapName).string();
+                        replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
                         stbi_set_flip_vertically_on_load(true);
-                        unsigned char* textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+                        unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+                        if (stbi_failure_reason())
+                            std::cout << stbi_failure_reason() << std::endl;
                         currentMaterial->normalMap = std::make_unique<Texture>(textureData, width, height, nrChannels);
-;
                     }
                 }
             }
@@ -128,7 +141,7 @@ std::map<std::string, std::unique_ptr<Material>> loadMaterial(const std::filesys
     return std::move(result);
 }
 
-std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
+std::unique_ptr<Mesh> loadMesh(const std::filesystem::path &path)
 {
     std::vector<glm::vec3> vertices;
     std::vector<glm::vec3> normals;
@@ -140,12 +153,13 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
     std::vector<glm::vec3> meshBitangents;
     std::vector<glm::vec2> meshUVs;
     std::vector<uint32_t> meshIndices;
-    std::map<std::string, std::unique_ptr<Material>> meshMaterialsMap;
+    std::map<std::string, Material *> meshMaterialsMap;
     std::vector<SubMesh> meshSubMeshes;
-    
-    std::istringstream fileContents(IO::readFile(path));
+
+    std::istringstream fileContents(IO::readFile(path.string()));
     std::string line;
-    while (std::getline(fileContents, line)) {
+    while (std::getline(fileContents, line))
+    {
         std::istringstream lineStream(line);
         std::string word;
         while (lineStream >> word)
@@ -155,11 +169,12 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                 std::string mtllib;
                 if (lineStream >> mtllib)
                 {
-                    auto relativeMtllibPath = path.parent_path() / mtllib;
+                    auto relativeMtllibPath = (path.parent_path() / mtllib).string();
+                    replace(relativeMtllibPath, R"(\)", R"(/)");
                     std::cout << relativeMtllibPath << std::endl;
-                    meshMaterialsMap = loadMaterial(relativeMtllibPath); 
+                    meshMaterialsMap = loadMaterial(relativeMtllibPath);
                 }
-                break;           
+                break;
             }
             if (word == "usemtl")
             {
@@ -167,7 +182,7 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                 std::getline(lineStream, matName);
                 if (meshSubMeshes.size() > 0)
                 {
-                    auto& lastSubMesh = meshSubMeshes.back();
+                    auto &lastSubMesh = meshSubMeshes.back();
                     lastSubMesh.indexCount = meshIndices.size() - lastSubMesh.startIndex;
                 }
                 meshSubMeshes.push_back({meshIndices.size(), 0, matName, 0});
@@ -205,12 +220,13 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                 std::string v1Packed, v2Packed, v3Packed;
                 if ((lineStream >> v1Packed) && (lineStream >> v2Packed) && (lineStream >> v3Packed))
                 {
-                    struct UnpackData {
+                    struct UnpackData
+                    {
                         glm::vec3 vertex;
                         glm::vec3 normal;
                         glm::vec2 uv;
                     };
-                    auto unpack = [&meshVertices, &meshUVs, &meshNormals, &vertices, &uvs, &normals] (const std::string& vPacked) -> UnpackData
+                    auto unpack = [&meshVertices, &meshUVs, &meshNormals, &vertices, &uvs, &normals](const std::string &vPacked) -> UnpackData
                     {
                         std::stringstream ss(vPacked);
                         std::string vp;
@@ -219,11 +235,9 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                         {
                             vUnpacked.push_back(std::stoi(vp));
                         }
-                        return { vertices[vUnpacked[0] - 1], normals[vUnpacked[2] - 1], uvs[vUnpacked[1] - 1] };
-            
+                        return {vertices[vUnpacked[0] - 1], normals[vUnpacked[2] - 1], uvs[vUnpacked[1] - 1]};
                     };
-                    auto startingIndex = meshVertices.size();
-                    auto v1Unpacked = unpack(v1Packed);                   
+                    auto v1Unpacked = unpack(v1Packed);
                     auto v2Unpacked = unpack(v2Packed);
                     auto v3Unpacked = unpack(v3Packed);
                     meshVertices.push_back(v1Unpacked.vertex);
@@ -235,7 +249,7 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                     meshUVs.push_back(v1Unpacked.uv);
                     meshUVs.push_back(v2Unpacked.uv);
                     meshUVs.push_back(v3Unpacked.uv);
-                    
+
                     auto e1 = v2Unpacked.vertex - v1Unpacked.vertex;
                     auto e2 = v3Unpacked.vertex - v1Unpacked.vertex;
                     auto deltaUV1 = v2Unpacked.uv - v1Unpacked.uv;
@@ -254,9 +268,9 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
                     meshBitangents.push_back(bitangent);
                     meshBitangents.push_back(bitangent);
                     meshBitangents.push_back(bitangent);
-                    meshIndices.push_back(startingIndex);
-                    meshIndices.push_back(startingIndex + 1);
-                    meshIndices.push_back(startingIndex + 2);
+                    meshIndices.push_back(meshVertices.size() - 3);
+                    meshIndices.push_back(meshVertices.size() - 2);
+                    meshIndices.push_back(meshVertices.size() - 1);
                 }
                 break;
             }
@@ -265,7 +279,7 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path& path)
     }
     if (meshSubMeshes.size() > 0)
     {
-        auto& lastSubMesh = meshSubMeshes.back();
+        auto &lastSubMesh = meshSubMeshes.back();
         lastSubMesh.indexCount = meshIndices.size() - lastSubMesh.startIndex;
     }
 
@@ -288,27 +302,28 @@ void MeshCatalog::loadMeshes(std::string location)
         if (file.path().extension() == ".obj")
         {
             std::string key = file.path().string().substr(location.size());
+            replace(key, R"(\)", R"(/)");
             m_meshes.emplace_back(loadMesh(file.path()));
             m_namedMeshes[key] = m_meshes.back().get();
         }
     }
-    for(auto& it : m_namedMeshes)
+    for (auto &it : m_namedMeshes)
     {
         std::cout << it.first << std::endl;
     }
 }
 
-std::map<std::string, Mesh*>::iterator MeshCatalog::begin()
+std::map<std::string, Mesh *>::iterator MeshCatalog::begin()
 {
     return m_namedMeshes.begin();
 }
 
-std::map<std::string, Mesh*>::iterator MeshCatalog::end()
+std::map<std::string, Mesh *>::iterator MeshCatalog::end()
 {
     return m_namedMeshes.end();
 }
 
-Mesh* MeshCatalog::getMesh(const std::string& name)
+Mesh *MeshCatalog::getMesh(const std::string &name)
 {
     return m_namedMeshes[name];
 }
