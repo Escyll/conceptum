@@ -58,27 +58,27 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                 std::getline(lineStream, name);
                 std::cout << "\n"
                           << name << std::endl;
-                result[name] = new Material();
+                result[name] = new Material(name);
                 currentMaterial = result[name];
-                currentMaterial->name = name;
             }
             else if (word == "Ns")
             {
-                lineStream >> currentMaterial->specularExponent;
-                currentMaterial->specularExponent = currentMaterial->specularExponent;
-                std::cout << "SpecularExponent: " << currentMaterial->specularExponent << std::endl;
+                float specularExponent;
+                lineStream >> specularExponent;
+                currentMaterial->setFloat("specularExponent", specularExponent);
+                std::cout << "SpecularExponent: " << specularExponent << std::endl;
             }
             else if (word == "Ka")
             {
-                currentMaterial->ambientColor = readVec3(lineStream);
+                currentMaterial->setVec3("ambientColor", readVec3(lineStream));
             }
             else if (word == "Kd")
             {
-                currentMaterial->diffuseColor = readVec3(lineStream);
+                currentMaterial->setVec3("diffuseColor", readVec3(lineStream));
             }
             else if (word == "Ks")
             {
-                currentMaterial->specularColor = readVec3(lineStream);
+                currentMaterial->setVec3("specularColor", readVec3(lineStream));
             }
             else if (word == "map_Kd")
             {
@@ -87,7 +87,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                 {
                     if (mapName == "-s")
                     {
-                        currentMaterial->diffuseScale = readVec3(lineStream);
+                        currentMaterial->setVec3("diffuseScale", readVec3(lineStream));
                     }
                     else
                     {
@@ -100,7 +100,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         int width, height, nrChannels;
                         stbi_set_flip_vertically_on_load(true);
                         unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
-                        currentMaterial->diffuseTexture = std::make_unique<Texture>(textureData, width, height, nrChannels);
+                        currentMaterial->setTexture("diffuseTexture", std::make_unique<Texture>(textureData, width, height, nrChannels));
                     }
                 }
             }
@@ -111,12 +111,14 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                 {
                     if (mapName == "-bm")
                     {
-                        lineStream >> currentMaterial->normalStrength;
-                        std::cout << "-bm" << " " << currentMaterial->normalStrength << std::endl;
+                        float normalStrength;
+                        lineStream >> normalStrength;
+                        currentMaterial->setFloat("normalStrength", normalStrength);
+                        std::cout << "-bm" << " " << normalStrength << std::endl;
                     }
                     else if (mapName == "-s")
                     {
-                        currentMaterial->normalScale = readVec3(lineStream);
+                        currentMaterial->setVec3("normalScale", readVec3(lineStream));
                     }
                     else
                     {
@@ -131,7 +133,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
                         if (stbi_failure_reason())
                             std::cout << stbi_failure_reason() << std::endl;
-                        currentMaterial->normalMap = std::make_unique<Texture>(textureData, width, height, nrChannels);
+                        currentMaterial->setTexture("normalMap", std::make_unique<Texture>(textureData, width, height, nrChannels));
                     }
                 }
             }

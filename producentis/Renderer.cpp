@@ -415,54 +415,45 @@ void loadMesh(Mesh *mesh)
         glEnableVertexAttribArray(4);
 
         auto material = materialsMap[subMesh.materialName];
-        if (material != nullptr)
+        assert(material != nullptr);
+        for (auto textureProperty = material->texturesBegin(); textureProperty != material->texturesEnd(); textureProperty++)
         {
-            if (materialsMap[subMesh.materialName]->diffuseTexture)
-            {
-                loadTexture(materialsMap[subMesh.materialName]->diffuseTexture.get());
-            }
-            if (materialsMap[subMesh.materialName]->normalMap)
-            {
-                loadTexture(materialsMap[subMesh.materialName]->normalMap.get());
-            }
+            loadTexture(textureProperty->second.get());
         }
     }
 }
 
 // TODO: view and project can be done separate?
-void drawMesh(Mesh *mesh, int shader, const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
+void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
 {
-    // useShaderProgram(shader);
-    // TODO: Figure out what useShaderProgram should do
     auto &materialsMap = mesh->getMaterials();
     for (auto &subMesh : mesh->getSubMeshes())
     {
         auto *material = materialsMap[subMesh.materialName];
-        setBool(shader, "useDiffuseTexture", material->diffuseTexture != nullptr);
-        setInt(shader, "diffuseTexture", 0);
-        setVec3(shader, "diffuseScale", material->diffuseScale);
-        if (material && material->diffuseTexture)
+        assert(material != nullptr);
+        auto shader = material->shader();
+        useShaderProgram(shader);
+        int textureId = 0;
+        for (auto textureProperty = material->texturesBegin(); textureProperty != material->texturesEnd(); textureProperty++)
         {
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, material->diffuseTexture->getId());
+            setInt(shader, textureProperty->first, textureId);
+            glActiveTexture(GL_TEXTURE0 + textureId);
+            glBindTexture(GL_TEXTURE_2D, textureProperty->second->getId());
+            textureId++;
         }
-        setInt(shader, "normalMap", 1);
-        setBool(shader, "useNormalMap", material->normalMap != nullptr);
-        setFloat(shader, "normalStrength", material->normalStrength);
-        setVec3(shader, "normalScale", material->normalScale);
-        if (material && material->normalMap)
+        for (auto floatProperty = material->floatsBegin(); floatProperty != material->floatsEnd(); floatProperty++)
         {
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, material->normalMap->getId());
+            setFloat(shader, floatProperty->first, floatProperty->second);
         }
-        setVec3(shader, "lightPos", glm::vec3(0, -3000, 3000));
-        // setVec3(shader, "lightColor", glm::vec3(1, 0.799, 0.825));
+        for (auto vec3Property = material->vec3sBegin(); vec3Property != material->vec3sEnd(); vec3Property++)
+        {
+            setVec3(shader, vec3Property->first, vec3Property->second);
+        }
+        // TODO setBool for useTexture
+
+        // Globals, think about it
+        setVec3(shader, "lightPos", glm::vec3(0, 0, 40));
         setVec3(shader, "lightColor", glm::vec3(1, 1, 1));
-        setFloat(shader, "specularExponent", material->specularExponent);
-        setVec3(shader, "ambientColor", material->ambientColor);
-        setVec3(shader, "diffuseColor", material->diffuseColor);
-        setVec3(shader, "specularColor", material->ambientColor);
-        setVec3(shader, "viewPos", glm::vec3(0, 0, 0));
         setMat4(shader, "model", model);
         setMat4(shader, "view", view);
         setMat4(shader, "projection", projection);

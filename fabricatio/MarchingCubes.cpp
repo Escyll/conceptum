@@ -378,8 +378,7 @@ Mesh *MarchingCubes::March(const ScalarGrid &scalarGrid, float isoLevel)
         }
     }
 
-    Material *tempMat = new Material();
-    tempMat->name = "temp";
-    tempMat->diffuseColor = {0.7, 0.5, 0.5};
+    Material *tempMat = new Material("temp");
+    tempMat->setVec3("diffuseColor", {0.5, 0, 0.78});
     return new Mesh(Mesh::fromVertices(meshVertices, tempMat));
 }

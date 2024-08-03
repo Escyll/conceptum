@@ -31,6 +31,6 @@ void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity> &entitie
         auto mesh = m_ecsContainer.getComponent<Mesh *>(entity);
         auto &modelTransform = m_ecsContainer.getComponent<Transform>(entity);
 
-        drawMesh(mesh, shader, getTransform(modelTransform), m_camera.view(), m_camera.projection());
+        drawMesh(mesh, getTransform(modelTransform), m_camera.view(), m_camera.projection());
     }
 }

@@ -25,6 +25,7 @@
 #include "FastNoiseLite.h"
 #include "ScalarGrid.h"
 #include "InputSystem.h"
+#include <stb_image.h>
 
 int main()
 {
@@ -35,11 +36,9 @@ int main()
         AppWindow *appWindow = createWindow(1920, 1080);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
-        auto standardFrag = IO::readFile("shaders/standard.frag");
-        auto underwaterFrag = IO::readFile("shaders/underwater.frag");
+        auto diffuseFrag = IO::readFile("shaders/underwater.frag");
         auto terrainFrag = IO::readFile("shaders/terrain.frag");
-        auto standardProgram = createShaderProgram(standardVert, standardFrag);
-        auto underwaterProgram = createShaderProgram(standardVert, underwaterFrag);
+        auto diffuseProgram = createShaderProgram(standardVert, diffuseFrag);
         auto terrainProgram = createShaderProgram(standardVert, terrainFrag);
         useShaderProgram(terrainProgram);
 
@@ -57,12 +56,14 @@ int main()
         if (drawCatsAndGirl)
         {
             meshCatalog.loadMeshes("assets/meshes");
-            std::ranges::for_each(meshCatalog, [underwaterProgram](auto namedMesh)
+            std::ranges::for_each(meshCatalog, [diffuseProgram](auto namedMesh)
                                   {
                                       loadMesh(namedMesh.second);
-                                      // auto material = namedMesh.second->getMaterial();
-                                      // material->setShader(underwaterProgram);
-                                  });
+                                      auto &materials = namedMesh.second->getMaterials();
+                                      for (auto &subMesh : namedMesh.second->getSubMeshes())
+                                      {
+                                          materials[subMesh.materialName]->setShader(diffuseProgram);
+                                      } });
 
             Entity punkEntity = ecs.createEntity();
             transform.location = glm::vec3(-1.0f, -0.33f, 0.0f);
@@ -134,9 +135,23 @@ int main()
 
         Camera camera;
         camera.setPosition(glm::vec3{0.0, 0.0, 0.0});
-        // camera.rotation = glm::vec3{glm::radians(-20.f), 0, 0};
+
+        int width, height, nrChannels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char *textureData = stbi_load("assets/textures/Grass.jpg", &width, &height, &nrChannels, 0);
+        auto grass = std::make_unique<Texture>(textureData, width, height, nrChannels);
+        textureData = stbi_load("assets/textures/Rock.jpg", &width, &height, &nrChannels, 0);
+        auto rock = std::make_unique<Texture>(textureData, width, height, nrChannels);
 
         Mesh *terrain = MarchingCubes::March(noiseGrid, 0.65);
+        auto &materials = terrain->getMaterials();
+        for (auto &subMesh : terrain->getSubMeshes())
+        {
+            materials[subMesh.materialName]->setShader(terrainProgram);
+            materials[subMesh.materialName]->setTexture("grass", std::move(grass));
+            materials[subMesh.materialName]->setTexture("rock", std::move(rock));
+        }
+
         loadMesh(terrain);
         Entity terrainEntity = ecs.createEntity();
         transform = Transform();
@@ -147,9 +162,8 @@ int main()
 
         SpinSystem spinSystem(ecs);
         RenderSystem renderSystem(ecs, camera);
-        renderSystem.shader = underwaterProgram;
-        std::vector<System *> systems{&spinSystem, &renderSystem};
-        // std::vector<System*> systems { &renderSystem };
+        // std::vector<System *> systems{&spinSystem, &renderSystem};
+        std::vector<System *> systems{&renderSystem};
 
         Clock clock;
         const float fpsLimit = 1.0f / 240.0f;

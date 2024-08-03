@@ -22,41 +22,37 @@ uniform float specularExponent;
 
 uniform vec3 lightPos;
 uniform vec3 lightColor;
-uniform vec3 viewPos;
 
-out vec4 fragColor;
+uniform sampler2D grass;
+uniform sampler2D rock;
+
+// out vec4 fragColor;
+out vec4 myOutputColor;
 
 void main()
 {
-    // vec4 alphaDiffuseMapColor = useDiffuseTexture ? texture(diffuseTexture, fs_in.uv * diffuseScale.xy) : vec4(1.0);
-    // vec3 diffuseMapColor = alphaDiffuseMapColor.rgb;
-    // vec3 diffuseMapColor = vec3(1.0, 0.0, 0.0);
+    float distance = length(lightPos - fs_in.worldPos);
+    float lightConstant = 1.0;
+    float lightLinear = 0.022;
+    float lightQuadratic = 0.0019;
+    float attenuation = 1.0/ (lightConstant + lightLinear * distance + lightQuadratic * (distance * distance));
     vec3 uNormal = normalize(fs_in.normal);
-    // if (useNormalMap)
-    // {
-    //     uNormal = texture(normalMap, fs_in.uv * normalScale.xy).xyz;
-    //     uNormal = uNormal * 2.0 - 1.0;
-    //     uNormal.xy *= normalStrength;
-    //     uNormal = normalize(fs_in.tbn * uNormal);
-    // }
 
-    // Diffuse
+    // // Diffuse
     vec3 lightDir = normalize(lightPos - fs_in.worldPos);
     float diff = max(dot(uNormal, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 diffuse = diff * lightColor * attenuation;
     vec3 result = (vec3(0.2, 0.2, 0.2) + 0.8*diffuse) * diffuseColor;
-    
-    // Ambient
-    // float ambientStrength = 0.3;
-    // vec3 ambient = ambientStrength * lightColor * diffuseMapColor;
-    
-    // Specular
-    // float specularStrength = 0.2;
-    // vec3 viewDir = normalize(viewPos - fs_in.worldPos);
-    // vec3 reflectDir = reflect(-lightDir, uNormal);
-    // float spec = pow(max(dot(viewDir, reflectDir), 0.0), specularExponent);
-    // vec3 specular = specularStrength * spec * lightColor * diffuseMapColor;
-
-    // fragColor = vec4((ambient + diffuse + specular), alphaDiffuseMapColor.a);
-    fragColor = vec4(result, 1.0);
+    // fragColor = vec4(0.2, 0.2, 0.2, 0.2);
+    // fragColor = vec4(result, 1.0);
+    //vec3 result = vec3(0.5, 1.0, 1.0);
+    // fragColor = vec4(result, 1.0);
+    // colorOut = vec4(1.0, 0.0, 0.0, 1.0);
+    // myOutputColor = vec4(result, 1.0);
+    if (dot(uNormal, vec3(0,0,1)) > 0.5 && fs_in.worldPos.z > 30.0)
+        myOutputColor = texture(grass, fs_in.worldPos.xy*2) * vec4(diffuse+0.1, 1.0);
+    else if (dot(uNormal, vec3(0,0,1)) > 0.0 && fs_in.worldPos.z > 30.0)
+        myOutputColor = 0.5*(texture(grass, fs_in.worldPos.xy*2) + texture(rock, fs_in.worldPos.xz*2)) * vec4(diffuse+0.1, 1.0);
+    else
+        myOutputColor = texture(rock, fs_in.worldPos.xz*0.5) * vec4(diffuse+0.1, 1.0);
 }

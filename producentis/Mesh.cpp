@@ -70,10 +70,10 @@ Mesh Mesh::fromVertices(const std::vector<glm::vec3> &vertices, Material *materi
         bitangents.push_back(bitangent);
         bitangents.push_back(bitangent);
     }
-    std::vector<SubMesh> subMeshes{SubMesh{0, indices.size(), material->name, 0}};
+    std::vector<SubMesh> subMeshes{SubMesh{0, indices.size(), material->name(), 0}};
     std::map<std::string, Material *> materialMap;
-    materialMap[material->name] = material;
-    return Mesh(vertices, uvs, normals, tangents, bitangents, indices, subMeshes, {{material->name, material}});
+    materialMap[material->name()] = material;
+    return Mesh(vertices, uvs, normals, tangents, bitangents, indices, subMeshes, {{material->name(), material}});
 }
 
 std::vector<float> &Mesh::getVertexBuffer()
