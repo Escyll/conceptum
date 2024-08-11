@@ -1,2 +1,0 @@
-add_library(FastNoiseLite INTERFACE)
-target_include_directories(FastNoiseLite INTERFACE .)
