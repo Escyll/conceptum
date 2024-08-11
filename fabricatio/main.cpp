@@ -1,31 +1,30 @@
-#include <iostream>
-#include <chrono>
-#include <filesystem>
-#include <cmath>
-#include <set>
+#include <FastNoiseLite.h>
 #include <algorithm>
-#include <ranges>
-#include <array>
+#include <cmath>
+#include <entt/entt.hpp>
+#include <filesystem>
+#include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <iostream>
 #include <numbers>
+#include <ranges>
+#include <stb_image.h>
 
-#include "producentis/Renderer.h"
-#include "producentis/Input.h"
-#include "producentis/Mesh.h"
-#include "producentis/Material.h"
 #include "producentis/Camera.h"
+#include "producentis/Material.h"
+#include "producentis/Mesh.h"
+#include "producentis/Renderer.h"
 
 #include "Clock.h"
-#include "RenderSystem.h"
-#include "ECSContainer.h"
-#include "Transform.h"
-#include "SpinSystem.h"
 #include "IO.h"
+#include "InputSystem.h"
 #include "MarchingCubes.h"
 #include "MeshCatalog.h"
-#include "FastNoiseLite.h"
+#include "PlayerControlComponent.h"
+#include "PlayerControllerSystem.h"
+#include "RenderSystem.h"
 #include "ScalarGrid.h"
-#include "InputSystem.h"
-#include <stb_image.h>
+#include "Transform.h"
 
 int main()
 {
@@ -33,7 +32,7 @@ int main()
     {
         std::cout << "Starting" << std::endl;
         std::cout << "Current path is " << std::filesystem::current_path() << '\n';
-        AppWindow *appWindow = createWindow(1920, 1080);
+        AppWindow* appWindow = createWindow(1920, 1080);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
         auto diffuseFrag = IO::readFile("shaders/underwater.frag");
@@ -43,48 +42,12 @@ int main()
         useShaderProgram(terrainProgram);
 
         MeshCatalog meshCatalog;
-        ECSContainer ecs;
-        ecs.registerType<Transform>();
-        ecs.registerType<Mesh *>();
-        ecs.registerType<Material>();
-        ecs.registerType<TimeSpin>();
-        std::set<Entity> entities;
+        entt::registry registry;
 
-        Transform transform;
-
-        bool drawCatsAndGirl = false;
-        if (drawCatsAndGirl)
-        {
-            meshCatalog.loadMeshes("assets/meshes");
-            std::ranges::for_each(meshCatalog, [diffuseProgram](auto namedMesh)
-                                  {
-                                      loadMesh(namedMesh.second);
-                                      auto &materials = namedMesh.second->getMaterials();
-                                      for (auto &subMesh : namedMesh.second->getSubMeshes())
-                                      {
-                                          materials[subMesh.materialName]->setShader(diffuseProgram);
-                                      } });
-
-            Entity punkEntity = ecs.createEntity();
-            transform.location = glm::vec3(-1.0f, -0.33f, 0.0f);
-            ecs.addComponent<Transform>(punkEntity, std::move(transform));
-            ecs.addComponent<Mesh *>(punkEntity, meshCatalog.getMesh("punk/punk.obj"));
-
-            Entity tijgerEntity = ecs.createEntity();
-            transform = Transform();
-            transform.location = glm::vec3(1.0f, -0.33f, 0.0f);
-            transform.rotation = glm::vec3(0, 0, glm::radians(180.f));
-            ecs.addComponent<Transform>(tijgerEntity, std::move(transform));
-            ecs.addComponent<Mesh *>(tijgerEntity, meshCatalog.getMesh("tijger/tijger.obj"));
-
-            Entity girlEntity = ecs.createEntity();
-            transform = Transform();
-            transform.location.y = 0.33;
-            ecs.addComponent<Transform>(girlEntity, std::move(transform));
-            ecs.addComponent<Mesh *>(girlEntity, meshCatalog.getMesh("katinka/Girl.obj"));
-
-            entities = {punkEntity, tijgerEntity, girlEntity};
-        }
+        auto player = registry.create();
+        registry.emplace<PlayerControlComponent>(player);
+        registry.emplace<Camera>(player);
+        registry.emplace<Transform>(player);
 
         FastNoiseLite noise;
         noise.SetSeed(200);
@@ -93,9 +56,9 @@ int main()
         noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
         noise.SetFractalType(FastNoiseLite::FractalType_FBm);
 
-        constexpr auto rangeX = std::ranges::iota_view{0, 200};
-        constexpr auto rangeY = std::ranges::iota_view{0, 200};
-        constexpr auto rangeZ = std::ranges::iota_view{0, 100};
+        constexpr auto rangeX = std::ranges::iota_view{0, 20};
+        constexpr auto rangeY = std::ranges::iota_view{0, 20};
+        constexpr auto rangeZ = std::ranges::iota_view{0, 10};
         auto rangeZReversed = rangeZ | std::views::reverse;
 
         ScalarGrid noiseGrid(glm::ivec3{rangeX.size(), rangeY.size(), rangeZ.size()});
@@ -104,7 +67,7 @@ int main()
         {
             for (int y : rangeY)
             {
-                auto noise2D = 0.5f + 0.5f * noise.GetNoise((float)x, (float)y);
+                auto noise2D = 0.5f + 0.5f * noise.GetNoise((float) x, (float) y);
                 auto surfaceNoise = 5.f * noise2D;
                 auto cosX = 0.5f * (cos(x * std::numbers::pi * 2.f / 200.f) + 1.f);
                 auto cosY = 0.5f * (cos(y * std::numbers::pi * 2.f / 200.f) + 1.f);
@@ -114,15 +77,13 @@ int main()
                 for (auto z : rangeZ)
                 {
                     auto caveNoise = 0.5f + 0.5f * noise.GetNoise(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-                    if (z < (int)std::floor(surfaceHeight) && z < caveCeil)
+                    if (z < (int) std::floor(surfaceHeight) && z < caveCeil)
                     {
                         noiseGrid.setScalar(glm::ivec3{x, y, z}, caveNoise);
-                    }
-                    else if (z == (int)std::floor(surfaceHeight) && z < caveCeil && caveNoise > 0.65f)
+                    } else if (z == (int) std::floor(surfaceHeight) && z < caveCeil && caveNoise > 0.65f)
                     {
                         noiseGrid.setScalar(glm::ivec3{x, y, z}, caveNoise);
-                    }
-                    else
+                    } else
                     {
                         if (noiseGrid.scalar(glm::ivec3{x, y, z - 1}) > 0.67f || noiseGrid.scalar(glm::ivec3{x, y, z - 2}) > 0.67f)
                             noiseGrid.setScalar(glm::ivec3{x, y, z}, 0.66f);
@@ -133,19 +94,16 @@ int main()
             }
         }
 
-        Camera camera;
-        camera.setPosition(glm::vec3{0.0, 0.0, 0.0});
-
         int width, height, nrChannels;
         stbi_set_flip_vertically_on_load(true);
-        unsigned char *textureData = stbi_load("assets/textures/Grass.jpg", &width, &height, &nrChannels, 0);
+        unsigned char* textureData = stbi_load("assets/textures/Grass.jpg", &width, &height, &nrChannels, 0);
         auto grass = std::make_unique<Texture>(textureData, width, height, nrChannels);
         textureData = stbi_load("assets/textures/Rock.jpg", &width, &height, &nrChannels, 0);
         auto rock = std::make_unique<Texture>(textureData, width, height, nrChannels);
 
-        Mesh *terrain = MarchingCubes::March(noiseGrid, 0.65);
-        auto &materials = terrain->getMaterials();
-        for (auto &subMesh : terrain->getSubMeshes())
+        Mesh* terrain = MarchingCubes::March(noiseGrid, 0.65);
+        auto& materials = terrain->getMaterials();
+        for (auto& subMesh : terrain->getSubMeshes())
         {
             materials[subMesh.materialName]->setShader(terrainProgram);
             materials[subMesh.materialName]->setTexture("grass", std::move(grass));
@@ -153,17 +111,17 @@ int main()
         }
 
         loadMesh(terrain);
-        Entity terrainEntity = ecs.createEntity();
-        transform = Transform();
-        transform.location = {-0.5 * rangeX.size(), -0.5 * rangeY.size(), 0};
-        ecs.addComponent<Transform>(terrainEntity, std::move(transform));
-        ecs.addComponent<Mesh *>(terrainEntity, std::move(terrain));
-        entities.insert(terrainEntity);
+        auto terrainEntity = registry.create();
+        registry.emplace<Transform>(terrainEntity);
+        registry.patch<Transform>(terrainEntity, [&rangeX, &rangeY](Transform& transform) {
+            transform.location = glm::vec3(-0.5 * rangeX.size(), -0.5 * rangeY.size(), 0);
+        });
+        registry.emplace<Mesh*>(terrainEntity, terrain);
 
-        SpinSystem spinSystem(ecs);
-        RenderSystem renderSystem(ecs, camera);
-        // std::vector<System *> systems{&spinSystem, &renderSystem};
-        std::vector<System *> systems{&renderSystem};
+        InputSystem inputSystem;
+        RenderSystem renderSystem(registry);
+        PlayerControllerSystem playerControllerSystem(registry, inputSystem);
+        std::vector<System*> systems{&playerControllerSystem, &renderSystem};
 
         Clock clock;
         const float fpsLimit = 1.0f / 240.0f;
@@ -172,8 +130,10 @@ int main()
         glm::vec3 cameraMotion = {0, 0, 0};
         float speedModifier = 1.0;
         constexpr float cameraBaseSpeed = 6;
-        InputSystem inputSystem;
         glm::fquat rotation;
+        ImGuiContext* context = imGuiCurrentContext();
+        ImGui::SetCurrentContext(context);
+        bool inMenuMode = false;
         while (!shouldClose(appWindow))
         {
             float elapsedSeconds = clock.elapsedSeconds();
@@ -187,43 +147,47 @@ int main()
                 {
                 case GlobalInput::ESCAPE:
                     setShouldClose(appWindow, true);
+                    break;
+                case GlobalInput::TOGGLE_MENU:
+                    inMenuMode = !inMenuMode;
+                    enableCursor(appWindow, inMenuMode);
+                    break;
                 }
             }
-            auto movementInput = inputSystem.movementInput();
-            for (auto input : movementInput)
+
+            newImGuiFrame();
+            ImGui::NewFrame();
+
+            static float f = 0.0f;
+            static int counter = 0;
+
+            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!"
+                // and append into it.
+            auto view = registry.view<PlayerControlComponent, Transform>();
+            for (const auto& [pcc, t] : view.each())
             {
-                switch (input.movement)
-                {
-                case MovementInput::FORWARD:
-                    cameraMotion.y = input.action == MovementInput::START ? 1 : 0;
-                    break;
-                case MovementInput::BACKWARD:
-                    cameraMotion.y = input.action == MovementInput::START ? -1 : 0;
-                    break;
-                case MovementInput::LEFT:
-                    cameraMotion.x = input.action == MovementInput::START ? -1 : 0;
-                    break;
-                case MovementInput::RIGHT:
-                    cameraMotion.x = input.action == MovementInput::START ? 1 : 0;
-                    break;
-                case MovementInput::UP:
-                    cameraMotion.z = input.action == MovementInput::START ? 1 : 0;
-                    break;
-                case MovementInput::DOWN:
-                    cameraMotion.z = input.action == MovementInput::START ? -1 : 0;
-                    break;
-                case MovementInput::SPRINT:
-                    speedModifier = input.action == MovementInput::START ? 2.0 : 1.0;
-                    break;
-                }
+                ImGui::Text("Location: %f %f %f", t.location.x, t.location.y, t.location.z);
+                ImGui::Text("Rotation: %f %f %f", t.rotation.x, t.rotation.y, t.rotation.z);
             }
-            float cameraSpeed = cameraBaseSpeed * speedModifier;
-            camera.moveRight(cameraSpeed * timeSinceLastUpdate * cameraMotion.x);
-            camera.moveForward(cameraSpeed * timeSinceLastUpdate * cameraMotion.y);
-            camera.moveUp(cameraSpeed * timeSinceLastUpdate * cameraMotion.z);
-            auto axisInput = inputSystem.axisInput();
-            camera.pitch(axisInput.second);
-            camera.yaw(axisInput.first);
+            ImGui::Text("This is some useful text."); // Display some text (you can
+                                                      // use a format strings too)
+
+            ImGui::SliderFloat("float", &f, 0.0f,
+                               1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+            ImGui::ColorEdit3("clear color",
+                              glm::value_ptr(renderSystem.clearColor)); // Edit 3 floats representing a color
+
+            if (ImGui::Button("Button")) // Buttons return true when clicked (most
+                                         // widgets return true when edited/activated)
+                counter++;
+            ImGui::SameLine();
+            ImGui::Text("counter = %d", counter);
+
+            // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
+            // io.Framerate, io.Framerate);
+            ImGui::End();
+
+            ImGui::Render();
 
             if (elapsedSeconds - lastFrameTime >= fpsLimit)
             {
@@ -231,16 +195,16 @@ int main()
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
                 {
-                    system->progress(timeDelta, entities);
+                    system->progress(timeDelta);
                 }
+                imGuiRenderDrawData(ImGui::GetDrawData());
                 swapBuffer(appWindow);
 
                 lastFrameTime = elapsedSeconds;
             }
             lastUpdateTime = elapsedSeconds;
         }
-    }
-    catch (std::exception &e)
+    } catch (std::exception& e)
     {
         std::cout << e.what() << std::endl;
     }

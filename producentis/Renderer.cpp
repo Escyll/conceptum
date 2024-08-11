@@ -4,6 +4,10 @@
 #include <stdexcept>
 #include <glad/glad.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -270,6 +274,7 @@ namespace
         case GLFW_KEY_UNKNOWN:
             return PRD_KEY_UNKNOWN;
         }
+        throw std::exception("Unhandled GLFW Key");
     }
 
     int toPrdAction(int glfwAction)
@@ -462,9 +467,9 @@ void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const g
     }
 }
 
-void clearScreen()
+void clearScreen(const glm::vec4 &color)
 {
-    glClearColor(0.6f, 0.6f, 1.0f, 1.0f);
+    glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -504,6 +509,21 @@ AppWindow *createWindow(int width, int height)
                                    { glViewport(0, 0, width, height); });
     glfwSetKeyCallback(glfwWindow, key_callback);
     glfwSetCursorPosCallback(glfwWindow, cursor_position_callback);
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(glfwWindow, true);
+
+    ImGui_ImplOpenGL3_Init("#version 130");
+
     return new AppWindow(glfwWindow);
 }
 
@@ -542,4 +562,25 @@ void swapBuffer(AppWindow *window)
 void pollEvents(AppWindow *window)
 {
     glfwPollEvents();
+}
+
+void newImGuiFrame()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+}
+
+void imGuiRenderDrawData(ImDrawData *drawData)
+{
+    ImGui_ImplOpenGL3_RenderDrawData(drawData);
+}
+
+ImGuiContext *imGuiCurrentContext()
+{
+    return ImGui::GetCurrentContext();
+}
+
+void enableCursor(AppWindow *window, bool showCursor)
+{
+    glfwSetInputMode(**window, GLFW_CURSOR, showCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }

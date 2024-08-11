@@ -15,6 +15,12 @@ void InputSystem::processInput(const Input &input)
                 GlobalInput::ESCAPE,
             });
             break;
+        case PRD_KEY_P:
+            if (keyEvent.action == PRD_RELEASE)
+            {
+                m_globalInput.push_back({GlobalInput::TOGGLE_MENU});
+            }
+            break;
         case PRD_KEY_LEFT_SHIFT:
             m_movementInput.push_back({MovementInput::SPRINT, keyEvent.action == PRD_RELEASE ? MovementInput::STOP : MovementInput::START});
             break;

@@ -1,3 +1,8 @@
+if(LINUX)
+set(OpenGL_GL_PREFERENCE GLVND)
+endif()
+find_package(OpenGL REQUIRED)
+
 add_library(producentis SHARED)
 
 target_sources(producentis
@@ -24,4 +29,4 @@ target_sources(producentis
 )
 
 target_include_directories(producentis PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(producentis PRIVATE glfw OpenGL::GL glad glm::glm stb_image)
+target_link_libraries(producentis PRIVATE glfw OpenGL::GL glad glm::glm stb_image imgui)

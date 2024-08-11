@@ -5,23 +5,25 @@ add_executable(fabricatio)
 set(sources
     "Clock.cpp"
     "Clock.h"
-    "ECSContainer.h"
-    "main.cpp"
+    "IO.cpp"
+    "IO.h"
+    "InputSystem.cpp"
+    "InputSystem.h"
+    "MarchingCubes.cpp"
+    "MarchingCubes.h"
+    "MeshCatalog.cpp"
+    "MeshCatalog.h"
+    "PlayerControlComponent.h"
+    "PlayerControllerSystem.cpp"
+    "PlayerControllerSystem.h"
     "RenderSystem.cpp"
     "RenderSystem.h"
-    "SpinSystem.h"
-    "SpinSystem.cpp"
-    "Transform.h"
-    "IO.h"
-    "IO.cpp"
-    "MeshCatalog.h"
-    "MeshCatalog.cpp"
-    "ScalarGrid.h"
     "ScalarGrid.cpp"
-    "MarchingCubes.h"
-    "MarchingCubes.cpp"
-    "InputSystem.h"
-    "InputSystem.cpp"
+    "ScalarGrid.h"
+    "System.h"
+    "Transform.cpp"
+    "Transform.h"
+    "main.cpp"
 )
 
 target_sources(fabricatio
@@ -29,7 +31,7 @@ target_sources(fabricatio
     ${sources}
 )
 
-target_link_libraries(fabricatio PRIVATE glm::glm stb_image FastNoiseLite producentis)
+target_link_libraries(fabricatio PRIVATE glm::glm stb_image FastNoiseLite producentis imgui EnTT::EnTT)
 
 cmake_print_variables(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 add_custom_target(CopyRuntimeData

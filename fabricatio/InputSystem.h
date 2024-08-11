@@ -9,7 +9,8 @@ struct GlobalInput
 {
     enum Action
     {
-        ESCAPE
+        ESCAPE,
+        TOGGLE_MENU
     };
     Action action;
 };

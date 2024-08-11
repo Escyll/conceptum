@@ -3,34 +3,22 @@
 
 #include "RenderSystem.h"
 #include "Transform.h"
-#include "producentis/Material.h"
 #include "producentis/Mesh.h"
 #include "producentis/Renderer.h"
 
-RenderSystem::RenderSystem(ECSContainer &ecsContainer, Camera &camera)
-    : m_ecsContainer(ecsContainer), m_camera(camera)
-{
-}
+RenderSystem::RenderSystem(entt::registry& registry)
+    : System(registry)
+{}
 
-glm::mat4 getTransform(const Transform &transformComponent)
+void RenderSystem::progress(float /*timeDelta*/)
 {
-    glm::mat4 transform(1.0f);
-    transform = glm::translate(transform, transformComponent.location);
-    transform = glm::rotate(transform, transformComponent.rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-    transform = glm::rotate(transform, transformComponent.rotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-    transform = glm::rotate(transform, transformComponent.rotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-    transform = glm::scale(transform, transformComponent.scale);
-    return transform;
-}
+    clearScreen(clearColor);
+    auto cameraEntities = m_registry.view<Camera, Transform>();
+    const auto& [cameraEntityCamera, cameraEntityTransform] = m_registry.get<Camera, Transform>(cameraEntities.front());
 
-void RenderSystem::progress(float /*timeDelta*/, const std::set<Entity> &entities)
-{
-    clearScreen();
-    for (auto entity : entities)
+    auto view = m_registry.view<Mesh*, Transform>();
+    for (const auto& [entity, mesh, transform] : view.each())
     {
-        auto mesh = m_ecsContainer.getComponent<Mesh *>(entity);
-        auto &modelTransform = m_ecsContainer.getComponent<Transform>(entity);
-
-        drawMesh(mesh, getTransform(modelTransform), m_camera.view(), m_camera.projection());
+        drawMesh(mesh, transform.transformation(), -cameraEntityTransform.transformation(), cameraEntityCamera.projection());
     }
 }

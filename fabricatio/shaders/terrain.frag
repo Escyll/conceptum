@@ -35,7 +35,7 @@ void main()
     float lightConstant = 1.0;
     float lightLinear = 0.022;
     float lightQuadratic = 0.0019;
-    float attenuation = 1.0/ (lightConstant + lightLinear * distance + lightQuadratic * (distance * distance));
+    float attenuation = 1.0 / (lightConstant + lightLinear * distance + lightQuadratic * (distance * distance));
     vec3 uNormal = normalize(fs_in.normal);
 
     // // Diffuse
