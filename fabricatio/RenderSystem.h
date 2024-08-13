@@ -1,13 +1,11 @@
 #ifndef RENDER_SYSTEM_H
 #define RENDER_SYSTEM_H
 
-#include <set>
 #include <entt/entt.hpp>
 
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 
-#include "producentis/Camera.h"
 
 #include "System.h"
 

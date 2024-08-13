@@ -1,27 +1,91 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <cmath>
 
 #include "Logger.h"
 
-Logger logger;
+namespace Log {
 
-void Logger::Log(const std::string& text)
+struct LoggerContext
 {
-    logger.m_context->push_back(text);
+    std::vector<std::string> logLines;
+    std::string soFar;
+};
+LoggerContext* gContext = nullptr;
+
+void setContext(LoggerContext* context)
+{
+    gContext = context;
 }
 
-std::vector<std::string> Logger::LastNLogLines(unsigned int maxLines)
+LoggerContext* context()
+{
+    return gContext;
+}
+
+LoggerContext* createContext()
+{
+    gContext = new LoggerContext;
+    return gContext;
+}
+
+void destroyContext(LoggerContext* context)
+{
+    delete context;
+}
+
+Log& Log::operator<<(const char* value)
+{
+    gContext->soFar += value;
+    return *this;
+}
+
+Log& Log::operator<<(const std::string& value)
+{
+    gContext->soFar += value;
+    return *this;
+}
+
+Log& Log::operator<<(const std::filesystem::path& value)
+{
+    gContext->soFar += value.string();
+    return *this;
+}
+
+template<typename T>
+Log& Log::operator<<(T value)
+{
+    gContext->soFar += std::to_string(value);
+    return *this;
+}
+
+template Log& Log::operator<<(float);
+template Log& Log::operator<<(int);
+template Log& Log::operator<<(double);
+template Log& Log::operator<<(unsigned int);
+template Log& Log::operator<<(long);
+template Log& Log::operator<<(long long);
+
+Log::~Log()
+{
+    gContext->logLines.push_back(gContext->soFar);
+}
+
+Log log()
+{
+    gContext->soFar = "";
+    return Log();
+}
+
+std::vector<std::string> lastNLogLines(unsigned int maxLines)
 {
     std::vector<std::string> result;
-    int nLines = logger.m_context->size();
-    std::cout << nLines - 1 - maxLines << std::endl;
-    for (int i = nLines - 1; i > std::max(nLines - 1 - static_cast<int>(maxLines), 0) ; i--)
+    int nLines = gContext->logLines.size();
+    for (int i = nLines - 1; i > std::max(nLines - 1 - static_cast<int>(maxLines), 0); i--)
     {
-        result.push_back(logger.m_context->at(i));
+        result.push_back(gContext->logLines.at(i));
     }
-    std::cout << result.size() << std::endl;
     return result;
 }
 
+} // namespace Log

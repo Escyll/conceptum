@@ -39,7 +39,6 @@ namespace ShaderCompiler
             glGetShaderInfoLog(shader, 512, NULL, infoLog);
             throw std::runtime_error(std::string("Shader compilation failed \n") + infoLog);
         }
-        std::cout << "Compiled shader " << shader << std::endl;
         return shader;
     }
 }

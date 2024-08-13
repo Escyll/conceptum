@@ -318,7 +318,7 @@ namespace
             {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 }
 
-Mesh *MarchingCubes::March(const ScalarGrid &scalarGrid, float isoLevel)
+Mesh* MarchingCubes::march(const ScalarGrid& scalarGrid, float isoLevel)
 {
     std::vector<glm::vec3> meshVertices;
     auto gridSize = scalarGrid.size();

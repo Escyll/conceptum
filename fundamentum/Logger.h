@@ -1,23 +1,32 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <vector>
+#include <filesystem>
 #include <string>
-#include <memory>
+#include <vector>
 
-using LoggerContext = std::vector<std::string>;
-using SharedLoggerContext = std::shared_ptr<LoggerContext>;
+namespace Log {
 
-class Logger
+struct LoggerContext;
+class Log
 {
 public:
-    static void Log(const std::string& text);
-    static std::vector<std::string> LastNLogLines(unsigned int maxLines);
-    static SharedLoggerContext LoggerContext();
-    static void SetLoggerContext(const SharedLoggerContext& loggerContext);
-
-private:
-    SharedLoggerContext m_context = std::make_shared<::LoggerContext>();
+    Log& operator<<(const char* value);
+    Log& operator<<(const std::string& value);
+    Log& operator<<(const std::filesystem::path& value);
+    template<typename T>
+    Log& operator<<(T value);
+    ~Log();
 };
+
+void setContext(LoggerContext* context);
+LoggerContext* context();
+LoggerContext* createContext();
+void destroyContext(LoggerContext* context);
+
+Log log();
+std::vector<std::string> lastNLogLines(unsigned int maxLines);
+
+} // namespace Log
 
 #endif

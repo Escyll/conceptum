@@ -4,5 +4,5 @@
 class MarchingCubes
 {
 public:
-    static Mesh *March(const ScalarGrid &scalarGrid, float isoLevel);
+    static Mesh* march(const ScalarGrid& scalarGrid, float isoLevel);
 };

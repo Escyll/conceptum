@@ -1,10 +1,12 @@
-#include "IO.h"
-
-#include <string>
+#include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <algorithm>
+#include <string>
+
+#include "fundamentum/Logger.h"
+
+#include "IO.h"
 
 namespace IO {
 
@@ -14,7 +16,7 @@ namespace IO {
         std::ifstream t(path);
         if (t.fail())
         {
-            std::cout << "Could not open "s + path << std::endl;
+            Log::log() << "Could not open " << path;
         }
         std::stringstream buffer;
         buffer << t.rdbuf();

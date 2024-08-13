@@ -1,10 +1,11 @@
 #ifndef PRODUCENTIS_RENDERER_H
 #define PRODUCENTIS_RENDERER_H
 
-#include <string>
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
+#include <string>
 
+#include "fundamentum/Logger.h"
 #include "producentis.h"
 
 #include "Mesh.h"
@@ -23,9 +24,10 @@ producentis_API void setShouldClose(AppWindow *window, bool shouldClose);
 producentis_API Input processInput(AppWindow *window);
 producentis_API void swapBuffer(AppWindow *window);
 producentis_API void pollEvents(AppWindow *window);
+producentis_API void enableCursor(AppWindow* window, bool showCursor);
 producentis_API void newImGuiFrame();
 producentis_API void imGuiRenderDrawData(ImDrawData *drawData);
 producentis_API ImGuiContext *imGuiCurrentContext();
-producentis_API void enableCursor(AppWindow *window, bool showCursor);
+producentis_API void setLogContext(Log::LoggerContext* context);
 
 #endif

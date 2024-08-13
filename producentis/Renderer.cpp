@@ -322,12 +322,12 @@ namespace
 int createShaderProgram(const std::string &vertexShaderSource, const std::string &fragmentShaderSource)
 {
     int vertexShader = ShaderCompiler::compileShader(vertexShaderSource, ShaderCompiler::ShaderType::Vertex);
-    Logger::Log("Created vertex shader " + std::to_string(vertexShader));
+    Log::log() << "Created vertex shader " << vertexShader;
     int fragmentShader = ShaderCompiler::compileShader(fragmentShaderSource, ShaderCompiler::ShaderType::Fragment);
-    Logger::Log("Created fragment shader " + std::to_string(fragmentShader));
+    Log::log() << "Created fragment shader " << fragmentShader;
 
     auto program = Program::createProgram({vertexShader, fragmentShader});
-    Logger::Log("Created program " + std::to_string(program));
+    Log::log() << "Created program " << program;
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -389,6 +389,7 @@ void loadTexture(Texture *texture)
 
 void loadMesh(Mesh *mesh)
 {
+    Log::log() << "Loading mesh";
     uint32_t VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -434,12 +435,14 @@ void loadMesh(Mesh *mesh)
 // TODO: view and project can be done separate?
 void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
 {
+    Log::log() << "Drawing mesh";
     auto &materialsMap = mesh->getMaterials();
     for (auto &subMesh : mesh->getSubMeshes())
     {
         auto *material = materialsMap[subMesh.materialName];
         assert(material != nullptr);
         auto shader = material->shader();
+        Log::log() << "With shader " << shader;
         useShaderProgram(shader);
         int textureId = 0;
         for (auto textureProperty = material->texturesBegin(); textureProperty != material->texturesEnd(); textureProperty++)
@@ -586,4 +589,9 @@ ImGuiContext *imGuiCurrentContext()
 void enableCursor(AppWindow *window, bool showCursor)
 {
     glfwSetInputMode(**window, GLFW_CURSOR, showCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+void setLogContext(Log::LoggerContext* context)
+{
+    Log::setContext(context);
 }

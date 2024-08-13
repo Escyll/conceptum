@@ -29,10 +29,12 @@
 
 int main()
 {
+    auto logContext = Log::createContext();
+    setLogContext(logContext);
+    Log::log() << "Starting";
+    Log::log() << "Current path is " << std::filesystem::current_path().string();
     try
     {
-        Logger::Log("Starting");
-        Logger::Log(std::string("Current path is ") + std::filesystem::current_path().c_str());
         AppWindow* appWindow = createWindow(1920, 1080);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
@@ -102,7 +104,7 @@ int main()
         textureData = stbi_load("assets/textures/Rock.jpg", &width, &height, &nrChannels, 0);
         auto rock = std::make_unique<Texture>(textureData, width, height, nrChannels);
 
-        Mesh* terrain = MarchingCubes::March(noiseGrid, 0.65);
+        Mesh* terrain = MarchingCubes::march(noiseGrid, 0.65);
         auto& materials = terrain->getMaterials();
         for (auto& subMesh : terrain->getSubMeshes())
         {
@@ -188,9 +190,9 @@ int main()
                 static bool autoScroll = true;
                 ImGui::Checkbox("Autoscroll", &autoScroll);
                 ImGui::BeginChild("LogScroll");
-                for (auto line : std::ranges::reverse_view(Logger::LastNLogLines(1000)))
+                for (const auto& line : std::ranges::reverse_view(Log::lastNLogLines(1000)))
                 {
-                    ImGui::Text(line.c_str());
+                    ImGui::Text("%s", line.c_str());
                 }
                 if (autoScroll)
                     ImGui::SetScrollHereY(1.0);
@@ -199,7 +201,6 @@ int main()
 
                 ImGui::Render();
 
-                // std::cout << elapsedSeconds - lastFrameTime << std::endl;
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
                 {
@@ -215,5 +216,6 @@ int main()
     {
         std::cout << e.what() << std::endl;
     }
+    Log::destroyContext(logContext);
     return 0;
 }

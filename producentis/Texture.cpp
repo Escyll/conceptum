@@ -1,13 +1,10 @@
 #include <cstdlib>
-#include <iostream>
 
 #include "Texture.h"
 
 Texture::Texture(unsigned char *data, uint32_t width, uint32_t height, uint8_t channels)
     : m_data(data), m_width(width), m_height(height), m_id(0), m_channels(channels)
-{
-    std::cout << (int)data[0] << (int)data[1] << (int)data[2] << std::endl;
-}
+{}
 
 Texture::~Texture()
 {

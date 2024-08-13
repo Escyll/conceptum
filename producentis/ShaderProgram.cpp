@@ -28,13 +28,6 @@ namespace Program
         return os.str();
     }
 
-    std::string shadersToString(const std::vector<int> &shaders)
-    {
-        std::stringstream result;
-        result << '[' << join(shaders, ", ") << ']';
-        return result.str();
-    }
-
     unsigned int createProgram(const std::vector<int> &shaders)
     {
         unsigned int program = glCreateProgram();
@@ -50,9 +43,8 @@ namespace Program
         if (!success)
         {
             glGetProgramInfoLog(program, 512, NULL, infoLog);
-            throw std::runtime_error("Failed to create program with shaders " + shadersToString(shaders) + "\n" + infoLog);
+            throw std::runtime_error(std::string("Failed to create program with shaders \n") + infoLog);
         }
-        std::cout << "Created program with shaders " << shadersToString(shaders) << std::endl;
         return program;
     }
 

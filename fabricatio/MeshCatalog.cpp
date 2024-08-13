@@ -1,16 +1,14 @@
 #include <filesystem>
 #include <iostream>
 #include <sstream>
-#include <string_view>
-#include <ranges>
-#include <tuple>
 #include <algorithm>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "IO.h"
+#include "fundamentum/Logger.h"
 
+#include "IO.h"
 #include "MeshCatalog.h"
 
 bool replace(std::string &str, const std::string &from, const std::string &to)
@@ -56,8 +54,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
             {
                 std::string name;
                 std::getline(lineStream, name);
-                std::cout << "\n"
-                          << name << std::endl;
+                Log::log() << "\n" << name;
                 result[name] = new Material(name);
                 currentMaterial = result[name];
             }
@@ -66,7 +63,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                 float specularExponent;
                 lineStream >> specularExponent;
                 currentMaterial->setFloat("specularExponent", specularExponent);
-                std::cout << "SpecularExponent: " << specularExponent << std::endl;
+                Log::log() << "SpecularExponent: " << specularExponent;
             }
             else if (word == "Ka")
             {
@@ -94,7 +91,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         std::string rest;
                         std::getline(lineStream, rest);
                         mapName += rest;
-                        std::cout << mapName << std::endl;
+                        Log::log() << mapName;
                         auto texturePath = (path.parent_path() / mapName).string();
                         replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
@@ -114,7 +111,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         float normalStrength;
                         lineStream >> normalStrength;
                         currentMaterial->setFloat("normalStrength", normalStrength);
-                        std::cout << "-bm" << " " << normalStrength << std::endl;
+                        Log::log() << "-bm" << " " << normalStrength;
                     }
                     else if (mapName == "-s")
                     {
@@ -125,14 +122,14 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         std::string rest;
                         std::getline(lineStream, rest);
                         mapName += rest;
-                        std::cout << mapName << std::endl;
+                        Log::log() << mapName;
                         auto texturePath = (path.parent_path() / mapName).string();
                         replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
                         stbi_set_flip_vertically_on_load(true);
                         unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
                         if (stbi_failure_reason())
-                            std::cout << stbi_failure_reason() << std::endl;
+                            Log::log() << stbi_failure_reason();
                         currentMaterial->setTexture("normalMap", std::make_unique<Texture>(textureData, width, height, nrChannels));
                     }
                 }
@@ -173,7 +170,7 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path &path)
                 {
                     auto relativeMtllibPath = (path.parent_path() / mtllib).string();
                     replace(relativeMtllibPath, R"(\)", R"(/)");
-                    std::cout << relativeMtllibPath << std::endl;
+                    Log::log() << relativeMtllibPath;
                     meshMaterialsMap = loadMaterial(relativeMtllibPath);
                 }
                 break;
@@ -311,7 +308,7 @@ void MeshCatalog::loadMeshes(std::string location)
     }
     for (auto &it : m_namedMeshes)
     {
-        std::cout << it.first << std::endl;
+        Log::log() << it.first;
     }
 }
 
