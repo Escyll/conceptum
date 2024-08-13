@@ -10,6 +10,7 @@
 #include <ranges>
 #include <stb_image.h>
 
+#include "fundamentum/Logger.h"
 #include "producentis/Camera.h"
 #include "producentis/Material.h"
 #include "producentis/Mesh.h"
@@ -30,12 +31,12 @@ int main()
 {
     try
     {
-        std::cout << "Starting" << std::endl;
-        std::cout << "Current path is " << std::filesystem::current_path() << '\n';
+        Logger::Log("Starting");
+        Logger::Log(std::string("Current path is ") + std::filesystem::current_path().c_str());
         AppWindow* appWindow = createWindow(1920, 1080);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
-        auto diffuseFrag = IO::readFile("shaders/underwater.frag");
+        auto diffuseFrag = IO::readFile("shaders/diffuse.frag");
         auto terrainFrag = IO::readFile("shaders/terrain.frag");
         auto diffuseProgram = createShaderProgram(standardVert, diffuseFrag);
         auto terrainProgram = createShaderProgram(standardVert, terrainFrag);
@@ -124,73 +125,80 @@ int main()
         std::vector<System*> systems{&playerControllerSystem, &renderSystem};
 
         Clock clock;
-        const float fpsLimit = 1.0f / 240.0f;
-        float lastUpdateTime = 0;
+        const float fpsLimit = 1.0f / 2.0f;
         float lastFrameTime = 0;
-        glm::vec3 cameraMotion = {0, 0, 0};
-        float speedModifier = 1.0;
-        constexpr float cameraBaseSpeed = 6;
-        glm::fquat rotation;
         ImGuiContext* context = imGuiCurrentContext();
         ImGui::SetCurrentContext(context);
         bool inMenuMode = false;
         while (!shouldClose(appWindow))
         {
             float elapsedSeconds = clock.elapsedSeconds();
-            float timeSinceLastUpdate = elapsedSeconds - lastUpdateTime;
-            pollEvents(appWindow);
-            inputSystem.processInput(processInput(appWindow));
-            auto globalInput = inputSystem.globalInput();
-            for (auto input : globalInput)
-            {
-                switch (input.action)
-                {
-                case GlobalInput::ESCAPE:
-                    setShouldClose(appWindow, true);
-                    break;
-                case GlobalInput::TOGGLE_MENU:
-                    inMenuMode = !inMenuMode;
-                    enableCursor(appWindow, inMenuMode);
-                    break;
-                }
-            }
-
-            newImGuiFrame();
-            ImGui::NewFrame();
-
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!"
-                // and append into it.
-            auto view = registry.view<PlayerControlComponent, Transform>();
-            for (const auto& [pcc, t] : view.each())
-            {
-                ImGui::Text("Location: %f %f %f", t.location.x, t.location.y, t.location.z);
-                ImGui::Text("Rotation: %f %f %f", t.rotation.x, t.rotation.y, t.rotation.z);
-            }
-            ImGui::Text("This is some useful text."); // Display some text (you can
-                                                      // use a format strings too)
-
-            ImGui::SliderFloat("float", &f, 0.0f,
-                               1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color",
-                              glm::value_ptr(renderSystem.clearColor)); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button")) // Buttons return true when clicked (most
-                                         // widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
-            // io.Framerate, io.Framerate);
-            ImGui::End();
-
-            ImGui::Render();
-
             if (elapsedSeconds - lastFrameTime >= fpsLimit)
             {
+                pollEvents(appWindow);
+                inputSystem.processInput(processInput(appWindow));
+                auto globalInput = inputSystem.globalInput();
+                for (auto input : globalInput)
+                {
+                    switch (input.action)
+                    {
+                    case GlobalInput::ESCAPE:
+                        setShouldClose(appWindow, true);
+                        break;
+                    case GlobalInput::TOGGLE_MENU:
+                        inMenuMode = !inMenuMode;
+                        enableCursor(appWindow, inMenuMode);
+                        break;
+                    }
+                }
+
+                newImGuiFrame();
+                ImGui::NewFrame();
+
+                static float f = 0.0f;
+                static int counter = 0;
+
+                ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!"
+                    // and append into it.
+                auto view = registry.view<PlayerControlComponent, Transform>();
+                for (const auto& [pcc, t] : view.each())
+                {
+                    ImGui::Text("Location: %f %f %f", t.location.x, t.location.y, t.location.z);
+                    ImGui::Text("Rotation: %f %f %f", t.rotation.x, t.rotation.y, t.rotation.z);
+                }
+                ImGui::Text("This is some useful text."); // Display some text (you can
+                                                          // use a format strings too)
+
+                ImGui::SliderFloat("float", &f, 0.0f,
+                                   1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
+                ImGui::ColorEdit3("clear color",
+                                  glm::value_ptr(renderSystem.clearColor)); // Edit 3 floats representing a color
+
+                if (ImGui::Button("Button")) // Buttons return true when clicked (most
+                                             // widgets return true when edited/activated)
+                    counter++;
+                ImGui::SameLine();
+                ImGui::Text("counter = %d", counter);
+
+                // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
+                // io.Framerate, io.Framerate);
+                ImGui::End();
+
+                ImGui::Begin("Hello2!");
+                static bool autoScroll = true;
+                ImGui::Checkbox("Autoscroll", &autoScroll);
+                ImGui::BeginChild("LogScroll");
+                for (auto line : std::ranges::reverse_view(Logger::LastNLogLines(1000)))
+                {
+                    ImGui::Text(line.c_str());
+                }
+                if (autoScroll)
+                    ImGui::SetScrollHereY(1.0);
+                ImGui::EndChild();
+                ImGui::End();
+
+                ImGui::Render();
+
                 // std::cout << elapsedSeconds - lastFrameTime << std::endl;
                 float timeDelta = clock.deltaSeconds();
                 for (auto system : systems)
@@ -202,7 +210,6 @@ int main()
 
                 lastFrameTime = elapsedSeconds;
             }
-            lastUpdateTime = elapsedSeconds;
         }
     } catch (std::exception& e)
     {

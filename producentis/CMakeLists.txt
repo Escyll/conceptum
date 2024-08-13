@@ -29,4 +29,4 @@ target_sources(producentis
 )
 
 target_include_directories(producentis PUBLIC ${CMAKE_SOURCE_DIR})
-target_link_libraries(producentis PRIVATE glfw OpenGL::GL glad glm::glm stb_image imgui)
+target_link_libraries(producentis PRIVATE fundamentum glfw OpenGL::GL glad glm::glm stb_image imgui)

@@ -10,7 +10,7 @@ function Build()
 endfunction
 
 function Run()
-    execute '!cd ' . g:buildPath . 'fabricatio/ ; ./fabricatio'
+    execute '!cd ' . g:buildPath . '/bin ; ./fabricatio'
 endfunction
 
 imap <F7> <ESC> :call RunCmake()<CR>

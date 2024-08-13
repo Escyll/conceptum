@@ -3,13 +3,13 @@
 #include <cstdint>
 #include <stdexcept>
 #include <glad/glad.h>
-
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "fundamentum/Logger.h"
 
 #include "ShaderCompiler.h"
 #include "ShaderProgram.h"
@@ -274,7 +274,7 @@ namespace
         case GLFW_KEY_UNKNOWN:
             return PRD_KEY_UNKNOWN;
         }
-        throw std::exception("Unhandled GLFW Key");
+        throw std::runtime_error("Unhandled GLFW Key");
     }
 
     int toPrdAction(int glfwAction)
@@ -322,9 +322,12 @@ namespace
 int createShaderProgram(const std::string &vertexShaderSource, const std::string &fragmentShaderSource)
 {
     int vertexShader = ShaderCompiler::compileShader(vertexShaderSource, ShaderCompiler::ShaderType::Vertex);
+    Logger::Log("Created vertex shader " + std::to_string(vertexShader));
     int fragmentShader = ShaderCompiler::compileShader(fragmentShaderSource, ShaderCompiler::ShaderType::Fragment);
+    Logger::Log("Created fragment shader " + std::to_string(fragmentShader));
 
     auto program = Program::createProgram({vertexShader, fragmentShader});
+    Logger::Log("Created program " + std::to_string(program));
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);

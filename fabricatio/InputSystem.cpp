@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "producentis/KeyInput.h"
 
 #include "InputSystem.h"

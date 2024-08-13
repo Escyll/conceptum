@@ -31,7 +31,7 @@ target_sources(fabricatio
     ${sources}
 )
 
-target_link_libraries(fabricatio PRIVATE glm::glm stb_image FastNoiseLite producentis imgui EnTT::EnTT)
+target_link_libraries(fabricatio PRIVATE glm::glm stb_image FastNoiseLite producentis fundamentum imgui EnTT::EnTT)
 
 cmake_print_variables(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 add_custom_target(CopyRuntimeData
