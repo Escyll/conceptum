@@ -16,7 +16,7 @@ namespace IO {
         std::ifstream t(path);
         if (t.fail())
         {
-            Log::log() << "Could not open " << path;
+            Log::log() << "Could not open " << path << Log::end;
         }
         std::stringstream buffer;
         buffer << t.rdbuf();

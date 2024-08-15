@@ -10,11 +10,11 @@
 #include <ranges>
 #include <stb_image.h>
 
-#include "fundamentum/Logger.h"
 #include "producentis/Camera.h"
 #include "producentis/Material.h"
 #include "producentis/Mesh.h"
 #include "producentis/Renderer.h"
+#include <fundamentum/Logger.h>
 
 #include "Clock.h"
 #include "IO.h"
@@ -31,16 +31,16 @@ int main()
 {
     auto logContext = Log::createContext();
     setLogContext(logContext);
-    Log::log() << "Starting";
-    Log::log() << "Current path is " << std::filesystem::current_path().string();
+    Log::log() << "Starting" << Log::end;
+    Log::log() << "Current path is " << std::filesystem::current_path().string() << Log::end;
     try
     {
         AppWindow* appWindow = createWindow(1920, 1080);
 
         auto standardVert = IO::readFile("shaders/standard.vert");
-        auto diffuseFrag = IO::readFile("shaders/diffuse.frag");
+        // auto diffuseFrag = IO::readFile("shaders/diffuse.frag");
         auto terrainFrag = IO::readFile("shaders/terrain.frag");
-        auto diffuseProgram = createShaderProgram(standardVert, diffuseFrag);
+        // auto diffuseProgram = createShaderProgram(standardVert, diffuseFrag);
         auto terrainProgram = createShaderProgram(standardVert, terrainFrag);
         useShaderProgram(terrainProgram);
 
@@ -117,7 +117,8 @@ int main()
         auto terrainEntity = registry.create();
         registry.emplace<Transform>(terrainEntity);
         registry.patch<Transform>(terrainEntity, [&rangeX, &rangeY](Transform& transform) {
-            transform.location = glm::vec3(-0.5 * rangeX.size(), -0.5 * rangeY.size(), 0);
+            // transform.location = glm::vec3(-0.5 * rangeX.size(), -0.5 * rangeY.size(), 0);
+            transform.location = glm::vec3(0, 10, 0);
         });
         registry.emplace<Mesh*>(terrainEntity, terrain);
 
@@ -126,8 +127,12 @@ int main()
         PlayerControllerSystem playerControllerSystem(registry, inputSystem);
         std::vector<System*> systems{&playerControllerSystem, &renderSystem};
 
+        auto renderTexture = createTexture({1024, 768});
+        auto frameBuffer = createFramebuffer();
+        setFramebufferTexture(frameBuffer, renderTexture);
+
         Clock clock;
-        const float fpsLimit = 1.0f / 2.0f;
+        const float fpsLimit = 1.0f / 60.0f;
         float lastFrameTime = 0;
         ImGuiContext* context = imGuiCurrentContext();
         ImGui::SetCurrentContext(context);
@@ -154,6 +159,17 @@ int main()
                     }
                 }
 
+                float timeDelta = clock.deltaSeconds();
+
+                bindFramebuffer(frameBuffer);
+                for (auto system : systems)
+                {
+                    system->progress(timeDelta);
+                }
+                unbindFramebuffer();
+
+                clearScreen({});
+
                 newImGuiFrame();
                 ImGui::NewFrame();
 
@@ -169,7 +185,7 @@ int main()
                     ImGui::Text("Rotation: %f %f %f", t.rotation.x, t.rotation.y, t.rotation.z);
                 }
                 ImGui::Text("This is some useful text."); // Display some text (you can
-                                                          // use a format strings too)
+                    // use a format strings too)
 
                 ImGui::SliderFloat("float", &f, 0.0f,
                                    1.0f); // Edit 1 float using a slider from 0.0f to 1.0f
@@ -177,7 +193,7 @@ int main()
                                   glm::value_ptr(renderSystem.clearColor)); // Edit 3 floats representing a color
 
                 if (ImGui::Button("Button")) // Buttons return true when clicked (most
-                                             // widgets return true when edited/activated)
+                    // widgets return true when edited/activated)
                     counter++;
                 ImGui::SameLine();
                 ImGui::Text("counter = %d", counter);
@@ -199,13 +215,12 @@ int main()
                 ImGui::EndChild();
                 ImGui::End();
 
-                ImGui::Render();
+                ImGui::Begin("ViewPort");
+                ImTextureID texture_id = reinterpret_cast<ImTextureID>(renderTexture);
+                ImGui::Image(texture_id, ImVec2(1024, 768), {0, 1}, {1, 0});
+                ImGui::End();
 
-                float timeDelta = clock.deltaSeconds();
-                for (auto system : systems)
-                {
-                    system->progress(timeDelta);
-                }
+                ImGui::Render();
                 imGuiRenderDrawData(ImGui::GetDrawData());
                 swapBuffer(appWindow);
 

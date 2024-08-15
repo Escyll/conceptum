@@ -7,7 +7,7 @@
 Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec2> &uvs, const std::vector<glm::vec3> &normals, const std::vector<glm::vec3> &tangents, const std::vector<glm::vec3> &bitangents, const std::vector<uint32_t> &indices, const std::vector<SubMesh> &subMeshes, std::map<std::string, Material *> materials)
     : m_vertices(vertices), m_normals(normals), m_tangents(tangents), m_bitangents(bitangents), m_uvs(uvs), m_indices(indices), m_subMeshes(subMeshes), m_materialsMap(materials)
 {
-    Log::log() << "Creating mesh";
+    Log::log() << "Creating mesh" << Log::end;
     assert(m_vertices.size() == m_uvs.size() && m_vertices.size() == m_normals.size() && m_vertices.size() == m_tangents.size() && m_vertices.size() == m_bitangents.size());
     auto size = m_vertices.size();
     m_vertexBuffer.reserve((3 + 2 + 3 + 3 + 3) * size);

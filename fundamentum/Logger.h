@@ -2,11 +2,15 @@
 #define LOGGER_H
 
 #include <filesystem>
+#include <glm/glm.hpp>
 #include <string>
 #include <vector>
 
 namespace Log {
 
+struct End
+{};
+static End end;
 struct LoggerContext;
 class Log
 {
@@ -14,9 +18,10 @@ public:
     Log& operator<<(const char* value);
     Log& operator<<(const std::string& value);
     Log& operator<<(const std::filesystem::path& value);
+    Log& operator<<(const glm::mat4& value);
     template<typename T>
     Log& operator<<(T value);
-    ~Log();
+    void operator<<(const End& value);
 };
 
 void setContext(LoggerContext* context);

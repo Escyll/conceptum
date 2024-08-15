@@ -1,13 +1,12 @@
-#include <string>
-#include <iostream>
-#include <cstdint>
-#include <stdexcept>
-#include <glad/glad.h>
-#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <cstdint>
+#include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
+#include <stdexcept>
+#include <string>
 
 #include "fundamentum/Logger.h"
 
@@ -322,12 +321,12 @@ namespace
 int createShaderProgram(const std::string &vertexShaderSource, const std::string &fragmentShaderSource)
 {
     int vertexShader = ShaderCompiler::compileShader(vertexShaderSource, ShaderCompiler::ShaderType::Vertex);
-    Log::log() << "Created vertex shader " << vertexShader;
+    Log::log() << "Created vertex shader " << vertexShader << Log::end;
     int fragmentShader = ShaderCompiler::compileShader(fragmentShaderSource, ShaderCompiler::ShaderType::Fragment);
-    Log::log() << "Created fragment shader " << fragmentShader;
+    Log::log() << "Created fragment shader " << fragmentShader << Log::end;
 
     auto program = Program::createProgram({vertexShader, fragmentShader});
-    Log::log() << "Created program " << program;
+    Log::log() << "Created program " << program << Log::end;
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
@@ -389,7 +388,7 @@ void loadTexture(Texture *texture)
 
 void loadMesh(Mesh *mesh)
 {
-    Log::log() << "Loading mesh";
+    Log::log() << "Loading mesh" << Log::end;
     uint32_t VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -435,14 +434,22 @@ void loadMesh(Mesh *mesh)
 // TODO: view and project can be done separate?
 void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
 {
-    Log::log() << "Drawing mesh";
-    auto &materialsMap = mesh->getMaterials();
+    Log::log() << "Drawing mesh" << Log::end;
+    Log::log() << "Model matrix:" << Log::end;
+    Log::log() << model << Log::end;
+    Log::log() << Log::end;
+    Log::log() << "View matrix:" << Log::end;
+    Log::log() << view << Log::end;
+    Log::log() << Log::end;
+    Log::log() << "Projection matrix:" << Log::end;
+    Log::log() << projection << Log::end;
+    Log::log() << Log::end;
+    auto& materialsMap = mesh->getMaterials();
     for (auto &subMesh : mesh->getSubMeshes())
     {
         auto *material = materialsMap[subMesh.materialName];
         assert(material != nullptr);
         auto shader = material->shader();
-        Log::log() << "With shader " << shader;
         useShaderProgram(shader);
         int textureId = 0;
         for (auto textureProperty = material->texturesBegin(); textureProperty != material->texturesEnd(); textureProperty++)
@@ -594,4 +601,41 @@ void enableCursor(AppWindow *window, bool showCursor)
 void setLogContext(Log::LoggerContext* context)
 {
     Log::setContext(context);
+}
+
+unsigned int createTexture(const glm::vec2& size)
+{
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+
+unsigned int createFramebuffer()
+{
+    GLuint frameBuffer;
+    glGenFramebuffers(1, &frameBuffer);
+    return frameBuffer;
+}
+
+void setFramebufferTexture(unsigned int framebuffer, unsigned int texture)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void bindFramebuffer(unsigned int framebuffer)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+}
+
+void unbindFramebuffer()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

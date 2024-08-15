@@ -1,6 +1,8 @@
 #include <string>
 #include <vector>
-#include <iostream>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/matrix_decompose.hpp>
+#undef GLM_ENABLE_EXPERIMENTAL
 
 #include "Logger.h"
 
@@ -52,6 +54,19 @@ Log& Log::operator<<(const std::filesystem::path& value)
     return *this;
 }
 
+Log& Log::operator<<(const glm::mat4& value)
+{
+    glm::vec3 scale;
+    glm::quat rotation;
+    glm::vec3 translation;
+    glm::vec3 skew;
+    glm::vec4 perspective;
+    glm::decompose(value, scale, rotation, translation, skew, perspective);
+    log() << "Translation: " << translation.x << ", " << translation.y << ", " << translation.z << end;
+    log() << "Scale: " << scale.x << ", " << scale.y << ", " << scale.z;
+    return *this;
+}
+
 template<typename T>
 Log& Log::operator<<(T value)
 {
@@ -66,9 +81,10 @@ template Log& Log::operator<<(unsigned int);
 template Log& Log::operator<<(long);
 template Log& Log::operator<<(long long);
 
-Log::~Log()
+void Log::operator<<(const End&)
 {
     gContext->logLines.push_back(gContext->soFar);
+    gContext->soFar = "";
 }
 
 Log log()

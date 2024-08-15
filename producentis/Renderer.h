@@ -29,5 +29,10 @@ producentis_API void newImGuiFrame();
 producentis_API void imGuiRenderDrawData(ImDrawData *drawData);
 producentis_API ImGuiContext *imGuiCurrentContext();
 producentis_API void setLogContext(Log::LoggerContext* context);
+producentis_API unsigned int createTexture(const glm::vec2& size);
+producentis_API unsigned int createFramebuffer();
+producentis_API void setFramebufferTexture(unsigned int framebuffer, unsigned int texture);
+producentis_API void bindFramebuffer(unsigned int framebuffer);
+producentis_API void unbindFramebuffer();
 
 #endif

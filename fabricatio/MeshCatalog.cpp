@@ -54,7 +54,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
             {
                 std::string name;
                 std::getline(lineStream, name);
-                Log::log() << "\n" << name;
+                Log::log() << "\n" << name << Log::end;
                 result[name] = new Material(name);
                 currentMaterial = result[name];
             }
@@ -63,7 +63,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                 float specularExponent;
                 lineStream >> specularExponent;
                 currentMaterial->setFloat("specularExponent", specularExponent);
-                Log::log() << "SpecularExponent: " << specularExponent;
+                Log::log() << "SpecularExponent: " << specularExponent << Log::end;
             }
             else if (word == "Ka")
             {
@@ -91,7 +91,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         std::string rest;
                         std::getline(lineStream, rest);
                         mapName += rest;
-                        Log::log() << mapName;
+                        Log::log() << mapName << Log::end;
                         auto texturePath = (path.parent_path() / mapName).string();
                         replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
@@ -111,7 +111,7 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         float normalStrength;
                         lineStream >> normalStrength;
                         currentMaterial->setFloat("normalStrength", normalStrength);
-                        Log::log() << "-bm" << " " << normalStrength;
+                        Log::log() << "-bm" << " " << normalStrength << Log::end;
                     }
                     else if (mapName == "-s")
                     {
@@ -122,14 +122,14 @@ std::map<std::string, Material *> loadMaterial(const std::filesystem::path &path
                         std::string rest;
                         std::getline(lineStream, rest);
                         mapName += rest;
-                        Log::log() << mapName;
+                        Log::log() << mapName << Log::end;
                         auto texturePath = (path.parent_path() / mapName).string();
                         replace(texturePath, R"(\)", R"(/)");
                         int width, height, nrChannels;
                         stbi_set_flip_vertically_on_load(true);
                         unsigned char *textureData = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
                         if (stbi_failure_reason())
-                            Log::log() << stbi_failure_reason();
+                            Log::log() << stbi_failure_reason() << Log::end;
                         currentMaterial->setTexture("normalMap", std::make_unique<Texture>(textureData, width, height, nrChannels));
                     }
                 }
@@ -170,7 +170,7 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path &path)
                 {
                     auto relativeMtllibPath = (path.parent_path() / mtllib).string();
                     replace(relativeMtllibPath, R"(\)", R"(/)");
-                    Log::log() << relativeMtllibPath;
+                    Log::log() << relativeMtllibPath << Log::end;
                     meshMaterialsMap = loadMaterial(relativeMtllibPath);
                 }
                 break;
@@ -308,7 +308,7 @@ void MeshCatalog::loadMeshes(std::string location)
     }
     for (auto &it : m_namedMeshes)
     {
-        Log::log() << it.first;
+        Log::log() << it.first << Log::end;
     }
 }
 
