@@ -1,6 +1,7 @@
 include(CMakePrintHelpers)
 
-add_executable(fabricatio)
+add_executable(fabricatio
+    EditorUI.h)
 
 set(sources
     "Clock.cpp"
@@ -24,6 +25,7 @@ set(sources
     "Transform.cpp"
     "Transform.h"
     "main.cpp"
+    "EditorUI.h"
 )
 
 target_sources(fabricatio
