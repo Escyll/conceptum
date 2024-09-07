@@ -1,4 +1,4 @@
-#include <iostream>
+#include <numbers>
 
 #include "PlayerControlComponent.h"
 #include "Transform.h"
@@ -59,15 +59,10 @@ void PlayerControllerSystem::progress(float timeDelta)
         };
     }
     auto axisInput = m_inputSystem.axisInput();
+    auto limitPitch = [](double value) { return std::max(-std::numbers::pi * 0.5, std::min(value, std::numbers::pi * 0.5)); };
     for (const auto& [pcc, t] : view.each())
     {
-        t.rotation.x += axisInput.second;
+        t.rotation.x = limitPitch(t.rotation.x + axisInput.second);
         t.rotation.z += axisInput.first;
     };
-
-    // m_registry.patch<Transform>(playerController, [&axisInput, &motion](Transform& transform) {
-    //     transform.rotation.x += axisInput.second;
-    //     transform.rotation.z += axisInput.first;
-    //     transform.location += motion;
-    // });
 }

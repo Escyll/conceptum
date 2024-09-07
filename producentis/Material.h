@@ -1,8 +1,6 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#pragma once
-
 #include <string>
 #include <memory>
 #include <map>

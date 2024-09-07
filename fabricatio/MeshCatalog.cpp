@@ -282,7 +282,14 @@ std::unique_ptr<Mesh> loadMesh(const std::filesystem::path &path)
         lastSubMesh.indexCount = meshIndices.size() - lastSubMesh.startIndex;
     }
 
-    return std::make_unique<Mesh>(meshVertices, meshUVs, meshNormals, meshTangents, meshBitangents, meshIndices, meshSubMeshes, std::move(meshMaterialsMap));
+    return std::make_unique<Mesh>(meshVertices,
+                                  meshUVs,
+                                  meshNormals,
+                                  meshTangents,
+                                  meshBitangents,
+                                  meshIndices,
+                                  meshSubMeshes,
+                                  std::move(meshMaterialsMap));
 }
 
 void MeshCatalog::loadMeshes(std::string location)

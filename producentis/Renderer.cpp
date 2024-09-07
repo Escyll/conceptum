@@ -375,10 +375,7 @@ void loadTexture(Texture *texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    auto width = texture->getWidth();
-    auto height = texture->getHeight();
     auto channels = texture->getChannels();
-    auto data = texture->getData();
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     auto colorSpace = channels == 4 ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, colorSpace, texture->getWidth(), texture->getHeight(), 0, colorSpace, GL_UNSIGNED_BYTE, texture->getData());
@@ -392,9 +389,9 @@ void loadMesh(Mesh *mesh)
     uint32_t VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferVector(GL_ARRAY_BUFFER, mesh->getVertexBuffer(), GL_STATIC_DRAW);
-    auto &materialsMap = mesh->getMaterials();
-    for (auto &subMesh : mesh->getSubMeshes())
+    glBufferVector(GL_ARRAY_BUFFER, mesh->vertexBuffer, GL_STATIC_DRAW);
+    auto& materialsMap = mesh->materialsMap;
+    for (auto& subMesh : mesh->subMeshes)
     {
         uint32_t VAO;
         glGenVertexArrays(1, &VAO);
@@ -404,7 +401,10 @@ void loadMesh(Mesh *mesh)
         glBindVertexArray(VAO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, subMesh.indexCount * sizeof(uint32_t), mesh->getIndices().data() + subMesh.startIndex, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     subMesh.indexCount * sizeof(uint32_t),
+                     mesh->indices.data() + subMesh.startIndex,
+                     GL_STATIC_DRAW);
 
         // Vertex
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void *)0);
@@ -431,21 +431,10 @@ void loadMesh(Mesh *mesh)
     }
 }
 
-// TODO: view and project can be done separate?
-void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
+void drawMesh(Mesh* mesh, const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, const Lights& lights)
 {
-    Log::log() << "Drawing mesh" << Log::end;
-    Log::log() << "Model matrix:" << Log::end;
-    Log::log() << model << Log::end;
-    Log::log() << Log::end;
-    Log::log() << "View matrix:" << Log::end;
-    Log::log() << view << Log::end;
-    Log::log() << Log::end;
-    Log::log() << "Projection matrix:" << Log::end;
-    Log::log() << projection << Log::end;
-    Log::log() << Log::end;
-    auto& materialsMap = mesh->getMaterials();
-    for (auto &subMesh : mesh->getSubMeshes())
+    auto& materialsMap = mesh->materialsMap;
+    for (auto& subMesh : mesh->subMeshes)
     {
         auto *material = materialsMap[subMesh.materialName];
         assert(material != nullptr);
@@ -467,11 +456,13 @@ void drawMesh(Mesh *mesh, const glm::mat4 &model, const glm::mat4 &view, const g
         {
             setVec3(shader, vec3Property->first, vec3Property->second);
         }
-        // TODO setBool for useTexture
+        assert(lights.pointLights.size() == 1);
+        for (auto light : lights.pointLights)
+        {
+            setVec3(shader, "lightColor", light.pointLight.intensity * light.pointLight.color);
+            setVec3(shader, "lightPos", light.transform * glm::vec4(1));
+        }
 
-        // Globals, think about it
-        setVec3(shader, "lightPos", glm::vec3(0, 0, 40));
-        setVec3(shader, "lightColor", glm::vec3(1, 1, 1));
         setMat4(shader, "model", model);
         setMat4(shader, "view", view);
         setMat4(shader, "projection", projection);
@@ -484,6 +475,54 @@ void clearScreen(const glm::vec4 &color)
 {
     glClearColor(color.r, color.g, color.b, color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+unsigned int createTexture(const glm::vec2& size)
+{
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    return texture;
+}
+
+unsigned int createRenderBuffer(const glm::vec2& size)
+{
+    GLuint renderBuffer;
+    glGenRenderbuffers(1, &renderBuffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, size.x, size.y);
+    return renderBuffer;
+}
+
+unsigned int createFramebuffer()
+{
+    GLuint frameBuffer;
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    return frameBuffer;
+}
+
+void setFramebufferTextureAndBuffer(unsigned int framebuffer, unsigned int texture, unsigned int renderBuffer)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void bindFramebuffer(unsigned int framebuffer)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+}
+
+void unbindFramebuffer()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 AppWindow *createWindow(int width, int height)
@@ -527,7 +566,6 @@ AppWindow *createWindow(int width, int height)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
-    (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
 
@@ -603,39 +641,3 @@ void setLogContext(Log::LoggerContext* context)
     Log::setContext(context);
 }
 
-unsigned int createTexture(const glm::vec2& size)
-{
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    return texture;
-}
-
-unsigned int createFramebuffer()
-{
-    GLuint frameBuffer;
-    glGenFramebuffers(1, &frameBuffer);
-    return frameBuffer;
-}
-
-void setFramebufferTexture(unsigned int framebuffer, unsigned int texture)
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void bindFramebuffer(unsigned int framebuffer)
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-}
-
-void unbindFramebuffer()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}

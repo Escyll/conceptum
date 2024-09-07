@@ -4,29 +4,44 @@
 
 #include "Mesh.h"
 
-Mesh::Mesh(const std::vector<glm::vec3> &vertices, const std::vector<glm::vec2> &uvs, const std::vector<glm::vec3> &normals, const std::vector<glm::vec3> &tangents, const std::vector<glm::vec3> &bitangents, const std::vector<uint32_t> &indices, const std::vector<SubMesh> &subMeshes, std::map<std::string, Material *> materials)
-    : m_vertices(vertices), m_normals(normals), m_tangents(tangents), m_bitangents(bitangents), m_uvs(uvs), m_indices(indices), m_subMeshes(subMeshes), m_materialsMap(materials)
+Mesh::Mesh(const std::vector<glm::vec3>& vertices,
+           const std::vector<glm::vec2>& uvs,
+           const std::vector<glm::vec3>& normals,
+           const std::vector<glm::vec3>& tangents,
+           const std::vector<glm::vec3>& bitangents,
+           const std::vector<uint32_t>& indices,
+           const std::vector<SubMesh>& subMeshes,
+           std::map<std::string, Material*> materials)
+    : vertices(vertices)
+    , normals(normals)
+    , tangents(tangents)
+    , bitangents(bitangents)
+    , uvs(uvs)
+    , indices(indices)
+    , subMeshes(subMeshes)
+    , materialsMap(materials)
 {
     Log::log() << "Creating mesh" << Log::end;
-    assert(m_vertices.size() == m_uvs.size() && m_vertices.size() == m_normals.size() && m_vertices.size() == m_tangents.size() && m_vertices.size() == m_bitangents.size());
-    auto size = m_vertices.size();
-    m_vertexBuffer.reserve((3 + 2 + 3 + 3 + 3) * size);
-    for (int i = 0; i < m_vertices.size(); i++)
+    assert(vertices.size() == uvs.size() && vertices.size() == normals.size() && vertices.size() == tangents.size()
+           && vertices.size() == bitangents.size());
+    auto size = vertices.size();
+    vertexBuffer.reserve((3 + 2 + 3 + 3 + 3) * size);
+    for (int i = 0; i < vertices.size(); i++)
     {
-        m_vertexBuffer.push_back(m_vertices[i].x);
-        m_vertexBuffer.push_back(m_vertices[i].y);
-        m_vertexBuffer.push_back(m_vertices[i].z);
-        m_vertexBuffer.push_back(m_uvs[i].x);
-        m_vertexBuffer.push_back(m_uvs[i].y);
-        m_vertexBuffer.push_back(m_normals[i].x);
-        m_vertexBuffer.push_back(m_normals[i].y);
-        m_vertexBuffer.push_back(m_normals[i].z);
-        m_vertexBuffer.push_back(m_tangents[i].x);
-        m_vertexBuffer.push_back(m_tangents[i].y);
-        m_vertexBuffer.push_back(m_tangents[i].z);
-        m_vertexBuffer.push_back(m_bitangents[i].x);
-        m_vertexBuffer.push_back(m_bitangents[i].y);
-        m_vertexBuffer.push_back(m_bitangents[i].z);
+        vertexBuffer.push_back(vertices[i].x);
+        vertexBuffer.push_back(vertices[i].y);
+        vertexBuffer.push_back(vertices[i].z);
+        vertexBuffer.push_back(uvs[i].x);
+        vertexBuffer.push_back(uvs[i].y);
+        vertexBuffer.push_back(normals[i].x);
+        vertexBuffer.push_back(normals[i].y);
+        vertexBuffer.push_back(normals[i].z);
+        vertexBuffer.push_back(tangents[i].x);
+        vertexBuffer.push_back(tangents[i].y);
+        vertexBuffer.push_back(tangents[i].z);
+        vertexBuffer.push_back(bitangents[i].x);
+        vertexBuffer.push_back(bitangents[i].y);
+        vertexBuffer.push_back(bitangents[i].z);
     }
 }
 
@@ -77,24 +92,4 @@ Mesh Mesh::fromVertices(const std::vector<glm::vec3> &vertices, Material *materi
     std::map<std::string, Material *> materialMap;
     materialMap[material->name()] = material;
     return Mesh(vertices, uvs, normals, tangents, bitangents, indices, subMeshes, {{material->name(), material}});
-}
-
-std::vector<float> &Mesh::getVertexBuffer()
-{
-    return m_vertexBuffer;
-}
-
-std::vector<uint32_t> &Mesh::getIndices()
-{
-    return m_indices;
-}
-
-std::vector<SubMesh> &Mesh::getSubMeshes()
-{
-    return m_subMeshes;
-}
-
-std::map<std::string, Material *> &Mesh::getMaterials()
-{
-    return m_materialsMap;
 }

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <vector>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -83,6 +84,7 @@ template Log& Log::operator<<(long long);
 
 void Log::operator<<(const End&)
 {
+    std::cout << gContext->soFar << std::endl;
     gContext->logLines.push_back(gContext->soFar);
     gContext->soFar = "";
 }

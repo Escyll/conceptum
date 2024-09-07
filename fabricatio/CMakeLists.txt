@@ -1,11 +1,14 @@
 include(CMakePrintHelpers)
 
 add_executable(fabricatio
-    EditorUI.h)
+    EditorUI.h
+    TerrainGenerator.h TerrainGenerator.cpp
+    Serializer.h Serializer.cpp)
 
 set(sources
     "Clock.cpp"
     "Clock.h"
+    "EditorUI.h"
     "IO.cpp"
     "IO.h"
     "InputSystem.cpp"
@@ -21,11 +24,14 @@ set(sources
     "RenderSystem.h"
     "ScalarGrid.cpp"
     "ScalarGrid.h"
+    "Serializer.cpp"
+    "Serializer.h"
     "System.h"
+    "TerrainGenerator.cpp"
+    "TerrainGenerator.h"
     "Transform.cpp"
     "Transform.h"
     "main.cpp"
-    "EditorUI.h"
 )
 
 target_sources(fabricatio

@@ -1,17 +1,14 @@
 #include <FastNoiseLite.h>
-#include <algorithm>
-#include <cmath>
 #include <entt/entt.hpp>
 #include <filesystem>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <iostream>
-#include <numbers>
-#include <ranges>
 #include <stb_image.h>
 
 #include "fabricatio/EditorUI.h"
 #include "producentis/Camera.h"
+#include "producentis/Lights.h"
 #include "producentis/Material.h"
 #include "producentis/Mesh.h"
 #include "producentis/Renderer.h"
@@ -25,7 +22,8 @@
 #include "PlayerControlComponent.h"
 #include "PlayerControllerSystem.h"
 #include "RenderSystem.h"
-#include "ScalarGrid.h"
+#include "Serializer.h"
+#include "TerrainGenerator.h"
 #include "Transform.h"
 
 int main()
@@ -46,57 +44,6 @@ int main()
         useShaderProgram(terrainProgram);
 
         MeshCatalog meshCatalog;
-        entt::registry registry;
-
-        auto player = registry.create();
-        registry.emplace<PlayerControlComponent>(player);
-        registry.emplace<Camera>(player);
-        registry.emplace<Transform>(player);
-
-        FastNoiseLite noise;
-        noise.SetSeed(200);
-        noise.SetFractalOctaves(3);
-        noise.SetFrequency(1.0 / 20.0);
-        noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-        noise.SetFractalType(FastNoiseLite::FractalType_FBm);
-
-        constexpr auto rangeX = std::ranges::iota_view{0, 20};
-        constexpr auto rangeY = std::ranges::iota_view{0, 20};
-        constexpr auto rangeZ = std::ranges::iota_view{0, 10};
-        auto rangeZReversed = rangeZ | std::views::reverse;
-
-        ScalarGrid noiseGrid(glm::ivec3{rangeX.size(), rangeY.size(), rangeZ.size()});
-
-        for (int x : rangeX)
-        {
-            for (int y : rangeY)
-            {
-                auto noise2D = 0.5f + 0.5f * noise.GetNoise((float) x, (float) y);
-                auto surfaceNoise = 5.f * noise2D;
-                auto cosX = 0.5f * (cos(x * std::numbers::pi * 2.f / 200.f) + 1.f);
-                auto cosY = 0.5f * (cos(y * std::numbers::pi * 2.f / 200.f) + 1.f);
-                auto surfaceHeight = 30.f * std::max(cosX, cosY) + 30.f + surfaceNoise;
-                auto caveCeil = 40.f - surfaceNoise;
-
-                for (auto z : rangeZ)
-                {
-                    auto caveNoise = 0.5f + 0.5f * noise.GetNoise(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-                    if (z < (int) std::floor(surfaceHeight) && z < caveCeil)
-                    {
-                        noiseGrid.setScalar(glm::ivec3{x, y, z}, caveNoise);
-                    } else if (z == (int) std::floor(surfaceHeight) && z < caveCeil && caveNoise > 0.65f)
-                    {
-                        noiseGrid.setScalar(glm::ivec3{x, y, z}, caveNoise);
-                    } else
-                    {
-                        if (noiseGrid.scalar(glm::ivec3{x, y, z - 1}) > 0.67f || noiseGrid.scalar(glm::ivec3{x, y, z - 2}) > 0.67f)
-                            noiseGrid.setScalar(glm::ivec3{x, y, z}, 0.66f);
-                        else
-                            noiseGrid.setScalar(glm::ivec3{x, y, z}, 0.65f + 0.1 * (z - surfaceHeight));
-                    }
-                }
-            }
-        }
 
         int width, height, nrChannels;
         stbi_set_flip_vertically_on_load(true);
@@ -105,9 +52,10 @@ int main()
         textureData = stbi_load("assets/textures/Rock.jpg", &width, &height, &nrChannels, 0);
         auto rock = std::make_unique<Texture>(textureData, width, height, nrChannels);
 
-        Mesh* terrain = MarchingCubes::march(noiseGrid, 0.65);
-        auto& materials = terrain->getMaterials();
-        for (auto& subMesh : terrain->getSubMeshes())
+        TerrainGenerator terrainGenerator(200);
+        auto terrain = terrainGenerator.generateTerrainMesh();
+        auto& materials = terrain->materialsMap;
+        for (auto& subMesh : terrain->subMeshes)
         {
             materials[subMesh.materialName]->setShader(terrainProgram);
             materials[subMesh.materialName]->setTexture("grass", std::move(grass));
@@ -115,22 +63,36 @@ int main()
         }
 
         loadMesh(terrain);
+
+        entt::registry registry;
+
+        // Player
+        auto player = registry.create();
+        registry.emplace<PlayerControlComponent>(player);
+        registry.emplace<Camera>(player);
+        registry.emplace<Transform>(player);
+
+        // Terrain
         auto terrainEntity = registry.create();
-        registry.emplace<Transform>(terrainEntity);
-        registry.patch<Transform>(terrainEntity, [&rangeX, &rangeY](Transform& transform) {
-            // transform.location = glm::vec3(-0.5 * rangeX.size(), -0.5 * rangeY.size(), 0);
-            transform.location = glm::vec3(0, 10, 0);
-        });
+        auto& terrainTrans = registry.emplace<Transform>(terrainEntity);
+        terrainTrans.location = glm::vec3(0, 0, 0);
         registry.emplace<Mesh*>(terrainEntity, terrain);
+
+        // Light
+        auto light = registry.create();
+        auto& lightTrans = registry.emplace<Transform>(light);
+        lightTrans.location = glm::vec3(1, 1, 1);
+        registry.emplace<PointLight>(light, 1.f, glm::vec3{1, 1, 1});
 
         InputSystem inputSystem;
         RenderSystem renderSystem(registry);
         PlayerControllerSystem playerControllerSystem(registry, inputSystem);
         std::vector<System*> systems{&playerControllerSystem, &renderSystem};
 
-        auto renderTexture = createTexture({1024, 768});
         auto frameBuffer = createFramebuffer();
-        setFramebufferTexture(frameBuffer, renderTexture);
+        auto renderTexture = createTexture({1024, 768});
+        auto renderBuffer = createRenderBuffer({1024, 768});
+        setFramebufferTextureAndBuffer(frameBuffer, renderTexture, renderBuffer);
 
         Clock clock;
         const float fpsLimit = 1.0f / 60.0f;
@@ -160,6 +122,18 @@ int main()
                     case GlobalInput::TOGGLE_MENU:
                         inMenuMode = !inMenuMode;
                         enableCursor(appWindow, inMenuMode);
+                        break;
+                    case GlobalInput::SAVE_SCENE: {
+                        Log::log() << "Saving scene..." << Log::end;
+                        Serializer::serialize(registry);
+                        Log::log() << "Saving scene... Done" << Log::end;
+                        break;
+                    }
+                    case GlobalInput::LOAD_SCENE: {
+                        Log::log() << "Load scene..." << Log::end;
+                        break;
+                    }
+                    default:
                         break;
                     }
                 }

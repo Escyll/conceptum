@@ -7,11 +7,7 @@
 
 struct GlobalInput
 {
-    enum Action
-    {
-        ESCAPE,
-        TOGGLE_MENU
-    };
+    enum Action { ESCAPE, TOGGLE_MENU, SAVE_SCENE, LOAD_SCENE };
     Action action;
 };
 

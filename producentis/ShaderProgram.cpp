@@ -1,51 +1,28 @@
-#include <iostream>
-#include <iterator>
-#include <sstream>
 #include <stdexcept>
 #include <glad/glad.h>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "ShaderProgram.h"
 
-namespace Program
+namespace Program {
+unsigned int createProgram(const std::vector<int>& shaders)
 {
-    template <typename Range, typename Value = typename Range::value_type>
-    std::string join(Range const &elements, const char *const delimiter)
+    unsigned int program = glCreateProgram();
+    for (auto shader : shaders)
     {
-        std::ostringstream os;
-        auto b = begin(elements), e = end(elements);
+        glAttachShader(program, shader);
+    }
+    glLinkProgram(program);
 
-        if (b != e)
-        {
-            std::copy(b, prev(e), std::ostream_iterator<Value>(os, delimiter));
-            b = prev(e);
-        }
-        if (b != e)
-        {
-            os << *b;
-        }
-
-        return os.str();
+    int success;
+    char infoLog[512];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        throw std::runtime_error(std::string("Failed to create program with shaders \n") + infoLog);
+    }
+    return program;
     }
 
-    unsigned int createProgram(const std::vector<int> &shaders)
-    {
-        unsigned int program = glCreateProgram();
-        for (auto shader : shaders)
-        {
-            glAttachShader(program, shader);
-        }
-        glLinkProgram(program);
-
-        int success;
-        char infoLog[512];
-        glGetProgramiv(program, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramInfoLog(program, 512, NULL, infoLog);
-            throw std::runtime_error(std::string("Failed to create program with shaders \n") + infoLog);
-        }
-        return program;
-    }
-
-}
+    } // namespace Program

@@ -17,6 +17,22 @@ void InputSystem::processInput(const Input &input)
                 GlobalInput::ESCAPE,
             });
             break;
+        case PRD_KEY_F1:
+            if (keyEvent.action == PRD_RELEASE)
+            {
+                m_globalInput.push_back({
+                    GlobalInput::LOAD_SCENE,
+                });
+            }
+            break;
+        case PRD_KEY_F2:
+            if (keyEvent.action == PRD_RELEASE)
+            {
+                m_globalInput.push_back({
+                    GlobalInput::SAVE_SCENE,
+                });
+            }
+            break;
         case PRD_KEY_P:
             if (keyEvent.action == PRD_RELEASE)
             {
